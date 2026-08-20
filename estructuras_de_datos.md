@@ -215,9 +215,12 @@ Cada elemento (**nodo**) guarda su valor y una referencia al siguiente.
 
 Un tren es una lista enlazada física: cada vagón solo sabe a qué vagón está enganchado *después* de el (su `siguiente`), no necesita saber nada de los demás. Para llegar al último vagón hay que pasar por todos los anteriores — no existe forma de "saltar" directo a la mitad del tren, a diferencia de un arreglo.
 
-```
-[10 | *] -> [20 | *] -> [30 | None]
-```
+Cada casilla es un nodo con dos campos (valor y puntero al siguiente), y el último apunta a "nada" (representado aquí con una casilla tachada, equivalente al `None` de Python):
+
+![Diagrama técnico de una lista enlazada simple con tres nodos](img/listas_diagrama.svg)
+
+*Lista enlazada simple: cada nodo guarda un valor y una referencia al siguiente; el último apunta a null. Autor: Lasindi, dominio público — Wikimedia Commons.*
+
 
 ### Operaciones y su costo
 
@@ -243,30 +246,42 @@ Se elige una lista enlazada cuando **no se sabe cuántos elementos va a haber** 
 class Nodo:
     def __init__(self, valor):
         self.valor = valor
-        self.siguiente = None
+        self.siguiente = None  # None = todavia no esta conectado a ningun otro nodo
 
 
 class ListaEnlazada:
     def __init__(self):
-        self.cabeza = None
+        self.cabeza = None  # referencia al primer nodo; lista vacia si cabeza es None
 
     def insertar_al_inicio(self, valor):
         nuevo = Nodo(valor)
+        # El orden de estas dos lineas importa: primero el nodo nuevo tiene
+        # que apuntar a quien ERA la cabeza, y solo despues la lista puede
+        # "olvidar" a la cabeza vieja y adoptar al nuevo. Si se invirtiera
+        # el orden, se perderia la referencia al resto de la lista antes de
+        # guardarla en algun lado, y quedaria inaccesible para siempre.
         nuevo.siguiente = self.cabeza
         self.cabeza = nuevo
 
     def insertar_al_final(self, valor):
         nuevo = Nodo(valor)
-        if self.cabeza is None:
-            self.cabeza = nuevo
+        if self.cabeza is None:        # caso especial: la lista esta vacia,
+            self.cabeza = nuevo        # el nodo nuevo es toda la lista
             return
         actual = self.cabeza
+        # Caminar nodo por nodo hasta el ultimo: un nodo es el ultimo
+        # cuando su "siguiente" es None. No hay forma de saltar directo
+        # al final como en un arreglo, hay que recorrer todo.
         while actual.siguiente is not None:
             actual = actual.siguiente
-        actual.siguiente = nuevo
+        actual.siguiente = nuevo       # aqui "actual" ya es el ultimo nodo
 
     def buscar(self, valor):
         actual = self.cabeza
+        # Patron base de recorrido, reutilizado (con variaciones) en
+        # eliminar() y __str__(): arrancar en la cabeza, avanzar de a un
+        # nodo con actual = actual.siguiente, y parar cuando actual llega
+        # a None (se acabo la lista sin encontrar el valor).
         while actual is not None:
             if actual.valor == valor:
                 return True
@@ -274,15 +289,28 @@ class ListaEnlazada:
         return False
 
     def eliminar(self, valor):
+        # Quitar un nodo de en medio exige RECONECTAR al nodo de antes con
+        # el nodo de despues, saltandose al que se va. Por eso hacen falta
+        # dos referencias avanzando juntas: "actual" (donde estoy parado)
+        # y "anterior" (un paso atras de actual).
         anterior = None
         actual = self.cabeza
         while actual is not None:
             if actual.valor == valor:
                 if anterior is None:
+                    # No hubo "anterior": nunca nos movimos, asi que el
+                    # nodo a eliminar es la cabeza misma. La cabeza salta
+                    # directo al segundo nodo.
                     self.cabeza = actual.siguiente
                 else:
+                    # "anterior" se conecta directo con lo que sigue de
+                    # "actual", brincandoselo por completo. Python destruye
+                    # el nodo de "actual" solo, porque ya nadie lo referencia.
                     anterior.siguiente = actual.siguiente
                 return True
+            # No coincidio el valor: avanzar los dos punteros, EN ESTE
+            # ORDEN. Si se moviera "actual" primero, "anterior" quedaria
+            # apuntando un paso mas adelante de donde debe.
             anterior = actual
             actual = actual.siguiente
         return False
@@ -290,7 +318,7 @@ class ListaEnlazada:
     def __str__(self):
         valores = []
         actual = self.cabeza
-        while actual is not None:
+        while actual is not None:      # mismo patron de recorrido de siempre
             valores.append(str(actual.valor))
             actual = actual.siguiente
         return " -> ".join(valores) if valores else "(vacia)"
@@ -305,6 +333,16 @@ lista.eliminar(10)
 print(lista)              # 5 -> 20
 ```
 
+Rastreando el ejemplo de arriba:
+
+| Paso | Qué pasa | Estado |
+|---|---|---|
+| `ListaEnlazada()` | `cabeza = None` | `(vacia)` |
+| `insertar_al_final(10)` | `cabeza is None` → caso especial, `10` se vuelve la cabeza | `10` |
+| `insertar_al_final(20)` | `actual` camina hasta `10` (el último), le cuelga `20` | `10 -> 20` |
+| `insertar_al_inicio(5)` | `5.siguiente = cabeza (10)`, luego `cabeza = 5` | `5 -> 10 -> 20` |
+| `eliminar(10)` | `anterior=None,actual=5` no coincide → `anterior=5,actual=10` sí coincide → `5.siguiente = 20` | `5 -> 20` |
+
 ### Práctica: lista de reproducción
 
 Extiendan `ListaEnlazada` con:
@@ -312,7 +350,7 @@ Extiendan `ListaEnlazada` con:
 1. Un método `longitud(self)` que cuente los nodos **sin usar una variable global**, recorriendo la lista.
 2. Un método `obtener(self, i)` que devuelva el valor en la posición `i` caminando desde `cabeza` (deben lanzar `IndexError` si `i` está fuera de rango).
 3. Un método `invertir(self)` que invierta el orden de la lista **cambiando referencias**, no creando una lista nueva.
-4. Prueben con una lista de 5 canciones (strings): insértenlas, inviértanla, e impriman el resultado con `print(lista)`.
+4. Prueben con 5 títulos de canciones como strings, por ejemplo `["Bohemian Rhapsody", "Imagine", "Hotel California", "Thriller", "Yesterday"]` (simulan una playlist: cada canción "conoce" solo a la siguiente, igual que cada nodo). Insértenlas en la lista, inviértanla, e impriman el resultado con `print(lista)`.
 
 ---
 
@@ -320,7 +358,7 @@ Extiendan `ListaEnlazada` con:
 
 ### Qué problema resuelve
 
-Procesar cosas en orden **LIFO** (Last In, First Out — el último que entró es el primero que sale). Aparece en: deshacer/rehacer, la pila de llamadas de funciones (incluida la recursión que ya vieron), revisar paréntesis balanceados, y navegación "atrás" del navegador.
+Procesar cosas en orden **LIFO** (Last In, First Out — el último que entró es el primero que sale). Aparece en deshacer/rehacer, la pila de llamadas de funciones, revisar paréntesis balanceados y navegación "atrás" del navegador.
 
 ### Cómo se ve por dentro
 
@@ -328,19 +366,25 @@ Procesar cosas en orden **LIFO** (Last In, First Out — el último que entró e
 
 *Sillas apiladas, Palamos, Cataluña. Foto: Kritzolina, CC BY-SA 4.0 — Wikimedia Commons.*
 
-Para tomar la silla amarilla de hasta abajo, primero hay que quitar todas las que están encima. La última silla que se puso es siempre la primera que se puede quitar — así funciona una pila.
+Para tomar la silla roja de hasta abajo, primero hay que quitar todas las que están encima. La última silla que se puso es siempre la primera que se puede quitar, así funciona una pila.
 
-```
-push(30) -> |30|
-push(20) -> |20|
-            |30|
-push(10) -> |10|
-            |20|
-            |30|
-pop()    -> devuelve 10, queda |20| |30|
-```
+La secuencia completa de `push` y `pop`:
 
-Solo se puede tocar la **cima**.
+![Diagrama técnico de una pila: secuencia de push y pop](img/pilas_diagrama.svg)
+
+*Una pila LIFO: cada `push` agrega arriba, cada `pop` quita de arriba — el orden de salida es exactamente el inverso del orden de entrada. Autor: Alhadis / Maxtremus, dominio público (CC0) — Wikimedia Commons.*
+}
+
+Solo se puede tocar la **cima**, no existe forma de leer o quitar el elemento de en medio o de abajo sin antes quitar todo lo que está encima.
+
+### Dos formas de construir una pila por dentro
+
+LIFO es una **regla de comportamiento**, no una estructura de datos concreta, se puede construir sobre cualquiera de las dos que ya conocen, y ambas dan operaciones `O(1)`:
+
+- **Sobre un arreglo dinámico** (`list` de Python): la cima es siempre el **último** elemento de la lista. `push` es `append` (agregar al final); `pop` es `pop()` sin argumentos (quitar del final). Es la implementación de esta sección.
+- **Sobre una lista enlazada** (la sección anterior): la cima es siempre la **cabeza**. `push` es exactamente `insertar_al_inicio`; `pop` es leer `cabeza.valor` y luego hacer `cabeza = cabeza.siguiente`. También `O(1)`, por la misma razón que insertar al inicio de una lista enlazada era barato: nunca hay que recorrer nada, solo mover una referencia.
+
+La pila de llamadas real de un programa en ejecución (la que se llena hasta el "stack overflow" en una recursión sin caso base) es, a nivel de hardware, la primera variante: un bloque contiguo de memoria con un **stack pointer** (un registro del procesador) que sube o baja para marcar dónde está la cima, `push` y `pop` son, literalmente, mover ese puntero un espacio.
 
 ### Operaciones y su costo
 
@@ -356,7 +400,7 @@ Solo se puede tocar la **cima**.
 - **La pila de llamadas de cualquier programa:** cada vez que una función llama a otra, el sistema apila esa llamada; cuando termina, la desapila y regresa a donde iba. La recursión funciona exactamente por esto — y por eso una recursión sin caso base termina en "stack overflow": la pila de llamadas se llena.
 - **Deshacer (Ctrl+Z):** Word, Photoshop y la mayoría de editores guardan cada acción en una pila; deshacer es un `pop()`.
 - **El botón "Atrás" del navegador:** cada página que visitan se apila; "Atrás" desapila la última.
-- **Compiladores y validadores:** revisar que el código tenga bien cerrados sus paréntesis, llaves y corchetes (exactamente la Práctica de esta sección) se resuelve con una pila.
+- **Compiladores y validadores:** revisar que el código tenga bien cerrados sus paréntesis, llaves y corchetes se resuelve con una pila.
 
 Se elige una pila cuando se quiere procesar las cosas en orden inverso a como llegaron — lo último que entro es lo primero que se necesita.
 
@@ -367,19 +411,33 @@ Con `list` (más simple: `append`/`pop` al final son O(1)):
 ```python
 class Pila:
     def __init__(self):
+        # Guardamos los datos en una list normal, pero con UNA regla
+        # propia: el ULTIMO elemento de la lista siempre representa la
+        # cima. Esa regla, no la clase list en si, es lo que hace que
+        # esto sea una pila y no cualquier lista.
         self._datos = []
 
     def push(self, valor):
+        # append() agrega al final == agregar a la cima. Es O(1) porque
+        # Python reserva espacio de sobra al final del arreglo dinamico;
+        # no hay que recorrer ni mover nada de lo que ya estaba.
         self._datos.append(valor)
 
     def pop(self):
         if self.esta_vacia():
+            # No hay un "elemento vacio" razonable que devolver en su
+            # lugar: lanzar un error es preferible a devolver None o 0
+            # en silencio (mismo criterio que ArregloFijo con un indice
+            # fuera de rango).
             raise IndexError("No se puede hacer pop de una pila vacia")
+        # pop() sin argumentos quita y devuelve el ULTIMO elemento, O(1)
+        # porque tampoco aqui hay que recorrer ni mover nada.
         return self._datos.pop()
 
     def peek(self):
         if self.esta_vacia():
             raise IndexError("Pila vacia")
+        # Solo LEE la cima (indice -1), sin quitarla de la lista.
         return self._datos[-1]
 
     def esta_vacia(self):
@@ -401,15 +459,33 @@ Nota: **no** usen `insert(0, x)` / `pop(0)` para simular una pila con `list` —
 ```python
 def parentesis_balanceados(texto):
     pila = Pila()
+    # A cada simbolo de CIERRE le corresponde exactamente un simbolo de
+    # APERTURA. El diccionario permite, al ver un cierre, preguntar: "lo
+    # que acabo de sacar de la pila, es justo la apertura que le toca a
+    # este cierre?".
     pares = {')': '(', ']': '[', '}': '{'}
 
     for caracter in texto:
         if caracter in "([{":
+            # Toda apertura se apila: es una promesa pendiente de cierre.
             pila.push(caracter)
         elif caracter in ")]}":
+            # Un cierre debe hacer pareja con la apertura MAS RECIENTE
+            # que sigue sin cerrarse (la de hasta arriba de la pila) —
+            # por eso una pila, y no una lista cualquiera, es la
+            # estructura correcta para este problema.
+            #
+            # Dos formas distintas de fallar aqui:
+            #   1) la pila ya esta vacia: sobra un cierre sin apertura
+            #      que le corresponda (ej. el primer caracter de ")(" );
+            #   2) pila.pop() saca una apertura que NO hace pareja con
+            #      este cierre (ej. "(]" — sale "(" pero se esperaba "[").
             if pila.esta_vacia() or pila.pop() != pares[caracter]:
                 return False
 
+    # Al final, la pila debe quedar vacia: toda apertura que se metio
+    # debe haber encontrado su cierre. Si sobra algo en la pila, es una
+    # apertura que nunca se cerro (ej. "((").
     return pila.esta_vacia()
 
 
