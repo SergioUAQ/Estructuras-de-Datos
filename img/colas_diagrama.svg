@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="600" height="210" viewBox="0 0 600 210" xml:space="preserve">
+<title>Cola FIFO: frente, final, enqueue y dequeue</title>
+<style type="text/css">
+	rect{ fill: #fff; stroke: #000; }
+	rect.dashed{ stroke-dasharray: 6,4; }
+	line{ stroke: #000; stroke-width: 1.5; }
+	polygon{ fill: #000; }
+	text{ font-family: Helvetica, Arial, sans-serif; text-anchor: middle; }
+	.valor{ font-size: 22px; }
+	.indice{ font-size: 13px; fill: #999; }
+	.rotulo{ font-size: 15px; font-weight: bold; }
+	.accion{ font-size: 13px; fill: #333; }
+</style>
+
+<!-- casilleros ocupados -->
+<rect x="160" y="110" width="60" height="60"/>
+<text class="valor" x="190" y="148">20</text>
+<text class="indice" x="190" y="190">1</text>
+
+<rect x="230" y="110" width="60" height="60"/>
+<text class="valor" x="260" y="148">30</text>
+<text class="indice" x="260" y="190">2</text>
+
+<rect x="300" y="110" width="60" height="60"/>
+<text class="valor" x="330" y="148">40</text>
+<text class="indice" x="330" y="190">3</text>
+
+<!-- casillero libre, siguiente destino de enqueue -->
+<rect class="dashed" x="370" y="110" width="60" height="60"/>
+<text class="indice" x="400" y="190">4</text>
+
+<!-- flecha frente -->
+<line x1="190" y1="70" x2="190" y2="100"/>
+<polygon points="190,110 183,98 197,98"/>
+<text class="rotulo" x="190" y="60">frente</text>
+
+<!-- flecha final -->
+<line x1="330" y1="70" x2="330" y2="100"/>
+<polygon points="330,110 323,98 337,98"/>
+<text class="rotulo" x="330" y="60">final</text>
+
+<!-- flecha dequeue: sale por el frente -->
+<line x1="155" y1="140" x2="95" y2="140"/>
+<polygon points="85,140 95,134 95,146"/>
+<text class="accion" x="120" y="168">dequeue()</text>
+
+<!-- flecha enqueue: entra por el final -->
+<line x1="540" y1="140" x2="445" y2="140"/>
+<polygon points="435,140 445,134 445,146"/>
+<text class="accion" x="490" y="168">enqueue(50)</text>
+
+</svg>

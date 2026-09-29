@@ -506,7 +506,9 @@ print(parentesis_balanceados("(("))          # False, sobra un '('
 
 ### Qué problema resuelve
 
-Procesar cosas en orden **FIFO** (First In, First Out — el primero que entra es el primero que sale). Aparece en: fila de impresión, atención de tickets, y es la base del recorrido BFS que van a usar en grafos (sección Grafos).
+Procesar cosas en orden **FIFO** (First In, First Out — el primero que entra es el primero que sale). Es el opuesto exacto de la pila que acaban de ver: en una pila el último que llega es el primero en salir (LIFO); en una cola, el primero que llega es el primero en salir (FIFO). Aparece en: fila de impresión, atención de tickets, y es la base del recorrido BFS que van a usar en grafos (sección Grafos).
+
+Si algo del vocabulario de Pilas (`push`, `pop`, cima) todavía no quedó del todo claro, no se preocupen: una cola usa el mismo tipo de estructura por dentro (arreglo o lista enlazada) — la única diferencia real es **por qué extremo se saca** el elemento. Esa es la idea central de toda esta sección.
 
 ### Cómo se ve por dentro
 
@@ -514,14 +516,25 @@ Procesar cosas en orden **FIFO** (First In, First Out — el primero que entra e
 
 *Fila para pagar, supermercado en Nueva York. Foto: David Shankbone, CC BY-SA 3.0 — Wikimedia Commons.*
 
-El primero que se formo es el primero que paga. Nadie se salta la fila (idealmente) — eso es FIFO.
+El primero que se formó es el primero que paga. Nadie se salta la fila (idealmente) — eso es FIFO. A diferencia de la pila (donde solo existe **una** posición especial, la cima), una cola tiene **dos** posiciones especiales que hay que llevar registradas:
+
+- **frente**: el elemento más antiguo, el próximo en salir con `dequeue`.
+- **final**: la última posición ocupada, donde entra el próximo elemento con `enqueue`.
+
+![Diagrama de una cola FIFO mostrando frente, final, enqueue y dequeue](img/colas_diagrama.svg)
+
+*Una cola FIFO: `enqueue` siempre agrega por el final, `dequeue` siempre quita por el frente — son extremos distintos, a diferencia de la pila, donde `push` y `pop` usan el mismo extremo.*
+
+Recorriendo la secuencia paso a paso:
 
 ```
-enqueue(10) -> |10|
-enqueue(20) -> |10|20|
-enqueue(30) -> |10|20|30|
-dequeue()   -> devuelve 10, queda |20|30|
+enqueue(10) -> |10|                          frente=10  final=10
+enqueue(20) -> |10|20|                       frente=10  final=20
+enqueue(30) -> |10|20|30|                    frente=10  final=30
+dequeue()   -> devuelve 10, queda |20|30|    frente=20  final=30
 ```
+
+Noten que `10` fue el primero en entrar y el primero en salir — eso es exactamente FIFO. Si esto fuera una pila, `dequeue()` habría devuelto `30` (el último en entrar), no `10`.
 
 ### Por que `list` es una mala cola
 
@@ -532,7 +545,18 @@ cola.append(20)
 cola.pop(0)   # OK, pero O(n): mueve todos los elementos restantes
 ```
 
-`pop(0)` es `O(n)` porque **todos** los elementos siguientes se recorren una posición. Para una cola de verdad se necesita una estructura donde quitar del frente sea `O(1)`.
+`append` (equivalente a `enqueue`) sigue siendo `O(1)`, igual que en la pila. El problema es `pop(0)`: para quitar el **primer** elemento de una `list`, Python tiene que recorrer y recorrer cada uno de los elementos restantes una posición hacia la izquierda, para cerrar el hueco que deja. Con 3 elementos no se nota; con 3 millones, sí. Es el mismo error de fondo que la advertencia de la sección Pilas sobre `insert(0, x)`: mover elementos de más solo porque se eligió el extremo equivocado de la estructura.
+
+Para una cola de verdad se necesita una estructura donde quitar del frente sea `O(1)`, sin mover nada.
+
+### Dos formas de construir una cola por dentro
+
+Igual que la pila, FIFO es una **regla de comportamiento**, no una estructura de datos concreta — se puede construir sobre las dos estructuras que ya conocen:
+
+- **Sobre una lista enlazada**, guardando referencia a la cabeza *y* a la cola: `enqueue` agrega un nodo nuevo después de la cola actual (`O(1)`, porque ya se sabe dónde está sin recorrer nada); `dequeue` quita la cabeza (`O(1)`, exactamente igual que en la sección Listas enlazadas). Aquí **sí** hace falta guardar una referencia aparte al último nodo: si solo se guardara la cabeza, `enqueue` tendría que recorrer toda la lista para encontrar el final, y dejaría de ser `O(1)`.
+- **Sobre un arreglo circular** (lo vemos abajo en esta misma sección): dos índices, `frente` y `final`, que avanzan con el operador `%` (módulo) para "dar la vuelta" cuando llegan al final del arreglo, sin desperdiciar espacio ni mover elementos.
+
+`collections.deque` de Python (la que usamos en la implementación de abajo) internamente usa una variante de la segunda idea, optimizada en C.
 
 ### Operaciones y su costo (con la estructura correcta)
 
@@ -559,6 +583,11 @@ from collections import deque
 
 class Cola:
     def __init__(self):
+        # deque = "double-ended queue": una estructura que permite agregar
+        # y quitar en O(1) POR AMBOS EXTREMOS (a diferencia de list, que
+        # solo es O(1) por el final). Aqui solo usamos dos de esas
+        # operaciones: append (agregar al final) y popleft (quitar del
+        # frente) -- exactamente lo que necesita una cola.
         self._datos = deque()
 
     def enqueue(self, valor):
@@ -586,11 +615,89 @@ print(c.dequeue())  # A
 print(c.frente())   # B
 ```
 
+Rastreando el ejemplo de arriba (mismo formato que usamos para `ListaEnlazada`):
+
+| Paso | Qué pasa | Estado (frente -> final) |
+|---|---|---|
+| `Cola()` | `_datos = deque()` vacío | `(vacia)` |
+| `enqueue("A")` | se agrega al final | `A` |
+| `enqueue("B")` | se agrega al final | `A -> B` |
+| `enqueue("C")` | se agrega al final | `A -> B -> C` |
+| `dequeue()` | `popleft()` quita y devuelve el frente (`"A"`) | `B -> C` |
+| `frente()` | solo **lee** `_datos[0]`, no quita nada | `B -> C` (sin cambio) |
+
+### Cola circular: la implementación con arreglo
+
+`deque` ya resuelve el problema para uso real, pero vale la pena entender **cómo se haría con un arreglo de tamaño fijo**, porque es la idea detrás de las colas de tamaño limitado que existen de verdad (buffers de audio/video, buffers de red) y porque la van a implementar ustedes mismos en la práctica.
+
+El problema: si usan un arreglo normal y `dequeue` simplemente mueve el índice `frente` hacia adelante (sin recorrer ni mover nada, a diferencia de `pop(0)` de `list`), las posiciones de atrás quedan "usadas y abandonadas" para siempre. El arreglo se va vaciando por delante mientras `final` sigue creciendo indefinidamente por detrás, aunque en realidad sobre espacio libre al principio.
+
+La solución: cuando el índice `final` llega al último casillero del arreglo, en vez de fallar o pedir más memoria, **regresa al casillero 0** — siempre que esa posición ya esté libre (porque `frente` ya avanzó más allá de ahí). Eso es exactamente lo que hace el operador módulo (`%`):
+
+![Cola circular: los índices frente y final avanzan con módulo y regresan a 0 al llegar al final del arreglo](img/colas_circular_diagrama.svg)
+
+*Cola circular de tamaño 6: los casilleros 4, 5, 0 y 1 están ocupados (`frente` está en 4, `final` en 1) — los índices "dieron la vuelta" después de pasar por el casillero 5. Los casilleros 2 y 3 siguen libres para futuros `enqueue`.*
+
+```python
+indice_siguiente = (final + 1) % capacidad
+```
+
+Con `capacidad = 6`: si `final = 5` (el último casillero — hay 6 casilleros, numerados del 0 al 5), entonces `(5 + 1) % 6 = 0`, y regresa al inicio. Si en cambio `final = 1`, `(1 + 1) % 6 = 2`, avanza normal. El `%` es lo que hace "circular" a la cola: el índice nunca se sale del arreglo, siempre rebota entre `0` y `capacidad - 1`.
+
+**La trampa clásica:** si `frente == final`, ¿la cola está vacía o está llena? Con solo esos dos índices es **ambiguo** — los dos casos se ven idénticos desde afuera. La forma más simple de resolverlo (la que van a usar en la práctica) es llevar un tercer dato: un contador `cantidad` de elementos actualmente guardados. Así "vacía" es `cantidad == 0` y "llena" es `cantidad == capacidad`, sin ambigüedad posible.
+
 ### Práctica: simulador de fila de atención
+
+Primero, algo corto para calentar, usando la `Cola` normal (la de `deque`, de arriba):
 
 1. Simulen una fila del banco: `Cola` de nombres. Metan 6 nombres.
 2. Atiendan (con `dequeue`) a 3 personas y muestren en pantalla quién fue atendido y en qué orden.
-3. Implementen una **cola circular de tamaño fijo** usando una `list` de tamaño `n` y dos índices (`frente` y `final`) que avanzan con `% n` (el operador módulo). Debe lanzar un error si intentan meter un elemento cuando ya está llena.
+
+Ahora la parte que conecta con la sección de arriba: implementen la cola circular ustedes mismos, **sin usar `deque` ni `list.pop(0)`**.
+
+3. Empiecen con este esqueleto y complétenlo (noten los `TODO`, son 7):
+
+   ```python
+   class ColaCircular:
+       def __init__(self, capacidad):
+           self.datos = [None] * capacidad
+           self.capacidad = capacidad
+           self.frente = 0
+           self.final = 0
+           self.cantidad = 0  # resuelve la ambiguedad frente == final
+
+       def esta_vacia(self):
+           return self.cantidad == 0
+
+       def esta_llena(self):
+           return self.cantidad == self.capacidad
+
+       def enqueue(self, valor):
+           if self.esta_llena():
+               raise IndexError("Cola llena")
+           # TODO 1: guardar 'valor' en self.datos, en la posicion self.final
+           # TODO 2: avanzar self.final con modulo (ver formula de arriba)
+           # TODO 3: incrementar self.cantidad
+           pass
+
+       def dequeue(self):
+           if self.esta_vacia():
+               raise IndexError("Cola vacia")
+           # TODO 4: leer el valor en self.datos[self.frente] y guardarlo
+           # TODO 5: avanzar self.frente con modulo (misma formula que TODO 2)
+           # TODO 6: decrementar self.cantidad
+           # TODO 7: devolver el valor leido en TODO 4
+           pass
+   ```
+
+4. Prueben con `capacidad = 4`: hagan `enqueue` de 4 valores, luego 2 `dequeue`, luego 2 `enqueue` más (esto obliga a `final` a dar la vuelta con `%`), y un `dequeue` final. Antes de correrlo, anoten en papel cuánto esperan que valgan `frente`, `final` y `cantidad` después de cada paso — después corran el código y comparen contra lo que anotaron.
+5. Prueben el caso límite: llenen la cola por completo e intenten un `enqueue` de más. Debe lanzar `IndexError`, no sobrescribir datos ni romperse en silencio.
+
+**Preguntas para discutir en clase** (respondan por escrito, 3-4 líneas cada una — la idea es que les generen dudas y las platiquemos):
+
+- Si quitaran `self.cantidad` de la clase, ¿con qué otro dato (sin agregar un contador) podrían distinguir "vacía" de "llena" usando solo `frente` y `final`? (Pista: una solución común es sacrificar un casillero, dejando la cola "llena" cuando le falta exactamente uno por llenar.)
+- `ColaCircular` tiene capacidad fija. `deque` no. ¿Qué tendría que pasar por dentro de `ColaCircular` para que pudiera crecer cuando se llena, igual que hace una `list`? Ese crecimiento, ¿seguiría siendo `O(1)` en **todas** las llamadas a `enqueue`, o solo en promedio?
+- Comparen las tres formas de construir una cola que vieron en esta sección (lista enlazada con cabeza+cola, arreglo circular, `deque`). Si tuvieran que explicarle a alguien que no ha visto el curso por qué `deque` es la opción "correcta" para usar en Python real, ¿qué le dirían?
 
 ---
 
