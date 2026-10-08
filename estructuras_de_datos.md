@@ -707,7 +707,7 @@ Ahora la parte que conecta con la sección de arriba: implementen la cola circul
 
 A veces no importa quién llegó primero, sino quién es **más urgente**. Una cola de prioridad siempre entrega el elemento de mayor (o menor) prioridad, sin importar el orden de llegada — es una `Cola`, pero donde el "frente" no lo decide quién llegó antes, sino quién tiene la prioridad más alta.
 
-> **Experimenten antes de leer el resto:** [Heap Interactivo](https://claude.ai/artifact/F2dR2TNes3vq3pxreRfdxi) — inserten y extraigan valores, en modo mínimo o máximo, y vean paso a paso (con una bitácora que explica cada comparación) cómo se reacomoda tanto el árbol como el arreglo. Jueguen con él un rato antes de seguir leyendo; las siguientes secciones explican exactamente lo que van a ver ahí.
+> **Experimenten antes de leer el resto:** [Heap Interactivo](interactivos/heap_interactivo.html) — inserten y extraigan valores, en modo mínimo o máximo, y vean paso a paso (con una bitácora que explica cada comparación) cómo se reacomoda tanto el árbol como el arreglo. Jueguen con él un rato antes de seguir leyendo; las siguientes secciones explican exactamente lo que van a ver ahí.
 
 ### Cómo se ve por dentro
 
@@ -889,7 +889,7 @@ La tupla `(prioridad, descripción)` funciona porque Python compara tuplas eleme
 
 ### Práctica: experimentar, programar y atender la sala de urgencias
 
-1. Antes de programar nada, usen el [Heap Interactivo](https://claude.ai/artifact/F2dR2TNes3vq3pxreRfdxi): inserten los valores `5, 3, 8, 1` uno por uno en modo heap mínimo y comparen, paso a paso, contra el trace de la sección "Insertar" de arriba. Después extraigan y comparen contra el trace de "Extraer". Deben coincidir exactamente.
+1. Antes de programar nada, usen el [Heap Interactivo](interactivos/heap_interactivo.html): inserten los valores `5, 3, 8, 1` uno por uno en modo heap mínimo y comparen, paso a paso, contra el trace de la sección "Insertar" de arriba. Después extraigan y comparen contra el trace de "Extraer". Deben coincidir exactamente.
 2. Completen `_reacomodar_hacia_arriba` y `_reacomodar_hacia_abajo` ustedes mismos en un archivo nuevo, **sin ver el código de arriba**, guiándose solo por la descripción en prosa de "Insertar" y "Extraer". Comparen después contra la implementación del documento.
 3. Modelen una sala de urgencias con `heapq`: cada paciente entra como `(nivel_gravedad, nombre)`, donde `1` es lo más grave.
 4. Inserten 6 pacientes en un orden de llegada que **no** coincida con su gravedad.

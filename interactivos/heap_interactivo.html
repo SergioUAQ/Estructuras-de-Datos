@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heap Interactivo</title>
+<meta name="description" content="Inserta y extrae valores en un heap mínimo o máximo y mira, paso a paso, cómo se reacomoda el árbol y el arreglo. Material del curso de Estructuras de Datos.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* layout: encabezado + controles arriba, arbol SVG + arreglo en el centro, bitacora de pasos abajo */
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --border:#d9dde3; --fg:#1b1f27; --muted:#6b7280;
+  --accent:#0e8388; --accent-fg:#ffffff;
+  --elegido:#f5a524; --elegido-fill:#fde4bb; --padre:#3b82f6; --padre-fill:#cfe0ff;
+  --hijo:#1aa160; --hijo-fill:#c9f0dc;
+  --font-display:'JetBrains Mono',ui-monospace,monospace; --font-body:'Public Sans',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171c; --surface:#1c1f26; --border:#333945; --fg:#eceef2; --muted:#9aa2b1;
+    --accent:#3fc6c2; --accent-fg:#0b1512;
+    --elegido:#f7b84d; --elegido-fill:#4a3414; --padre:#6ea8ff; --padre-fill:#1c2e4d;
+    --hijo:#3ad48a; --hijo-fill:#123324;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171c; --surface:#1c1f26; --border:#333945; --fg:#eceef2; --muted:#9aa2b1;
+  --accent:#3fc6c2; --accent-fg:#0b1512;
+  --elegido:#f7b84d; --elegido-fill:#4a3414; --padre:#6ea8ff; --padre-fill:#1c2e4d;
+  --hijo:#3ad48a; --hijo-fill:#123324;
+  color-scheme: dark;
+}
+*{box-sizing:border-box;}
+[hidden]{display:none!important;}
+body{background:var(--bg); color:var(--fg); font-family:var(--font-body); margin:0; padding-inline:16px; padding-block:20px 40px;}
+.wrap{max-width:860px; margin:0 auto; display:flex; flex-direction:column; gap:18px;}
+h1{font-family:var(--font-display); font-size:clamp(22px,4vw,30px); margin:0 0 2px; text-wrap:balance; letter-spacing:-0.02em;}
+.subt{color:var(--muted); font-size:14px; margin:0; max-width:65ch;}
+
+.card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px;}
+
+.modo-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.segmented{display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden;}
+.segmented button{appearance:none; border:none; background:var(--surface); color:var(--fg); font-family:var(--font-body); font-weight:600; font-size:13px; padding:7px 14px; cursor:pointer;}
+.segmented button[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg);}
+.segmented button:not(:last-child){border-right:1px solid var(--border);}
+
+.controles{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+.controles input[type="number"]{width:84px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--fg); font-family:var(--font-display); font-size:14px; min-width:0;}
+button.btn{appearance:none; border:1px solid var(--border); background:var(--bg); color:var(--fg); font-family:var(--font-body); font-weight:600; font-size:13px; padding:8px 13px; border-radius:8px; cursor:pointer; white-space:nowrap;}
+button.btn:hover{border-color:var(--accent);}
+button.btn.primario{background:var(--accent); color:var(--accent-fg); border-color:var(--accent);}
+button.btn:disabled{opacity:.4; cursor:not-allowed;}
+button.btn:focus-visible, .segmented button:focus-visible, input:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+.leyenda{display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted);}
+.leyenda span{display:inline-flex; align-items:center; gap:5px;}
+.swatch{width:12px; height:12px; border-radius:3px; display:inline-block; border:1px solid var(--border);}
+
+.viz{display:flex; flex-direction:column; align-items:center; gap:10px;}
+svg#arbol{width:100%; height:auto; max-width:640px;}
+.nodo-circ{stroke-width:1.6;}
+.nodo-txt{font-family:var(--font-display); font-weight:700; text-anchor:middle; dominant-baseline:middle;}
+
+.arreglo{display:flex; gap:6px; flex-wrap:wrap; justify-content:center; min-width:0;}
+.celda{display:flex; flex-direction:column; align-items:center; gap:4px;}
+.celda .caja{width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1.6px solid var(--border); background:var(--bg); font-family:var(--font-display); font-weight:700; font-size:14px; transition:background .25s, border-color .25s, transform .25s;}
+.celda .idx{font-size:10px; color:var(--muted); font-family:var(--font-display);}
+.caja.elegido{background:var(--elegido-fill); border-color:var(--elegido); transform:translateY(-3px);}
+.caja.padre{background:var(--padre-fill); border-color:var(--padre);}
+.caja.hijo{background:var(--hijo-fill); border-color:var(--hijo);}
+
+.codigo-arr{font-family:var(--font-display); font-size:12.5px; color:var(--muted); text-align:center; overflow-x:auto; white-space:nowrap; padding:2px 4px;}
+
+.vacio{color:var(--muted); font-size:14px; text-align:center; padding:28px 0;}
+
+.player{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;}
+.player .progreso{font-size:12.5px; color:var(--muted); font-family:var(--font-display); min-width:72px; text-align:center;}
+
+.bitacora h2{font-family:var(--font-display); font-size:14px; margin:0 0 8px; color:var(--muted); font-weight:600; letter-spacing:.02em; text-transform:uppercase;}
+.log-lista{display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; padding-right:4px;}
+.log-item{font-size:13.5px; padding:8px 10px; border-radius:8px; background:var(--bg); border:1px solid var(--border); line-height:1.4;}
+.log-item.activo{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--bg));}
+.log-item b{font-family:var(--font-display);}
+
+.nota{font-size:12.5px; color:var(--muted); line-height:1.5;}
+.nota code{font-family:var(--font-display); background:var(--bg); border:1px solid var(--border); padding:1px 5px; border-radius:5px;}
+
+@media (max-width:480px){
+  .celda .caja{width:32px; height:32px; font-size:12.5px;}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div>
+    <h1>Heap interactivo</h1>
+    <p class="subt">Inserten y extraigan valores y vean, paso a paso, cómo el heap se reacomoda &mdash; tanto en el árbol como en el arreglo de verdad.</p>
+  </div>
+
+  <div class="card modo-row">
+    <strong style="font-size:13px;">Modo:</strong>
+    <div class="segmented" role="group" aria-label="Tipo de heap">
+      <button id="btnMin" aria-pressed="true">Heap mínimo</button>
+      <button id="btnMax" aria-pressed="false">Heap máximo</button>
+    </div>
+    <span class="nota" id="notaModo">Siempre sale primero el <b>menor</b> valor.</span>
+  </div>
+
+  <div class="card controles">
+    <input type="number" id="valorInput" placeholder="valor" aria-label="Valor a insertar" />
+    <button class="btn primario" id="btnInsertar">Insertar</button>
+    <button class="btn" id="btnExtraer">Extraer raíz</button>
+    <button class="btn" id="btnAleatorio">Insertar aleatorio</button>
+    <button class="btn" id="btnEjemplo">Cargar ejemplo</button>
+    <button class="btn" id="btnReiniciar">Reiniciar</button>
+  </div>
+
+  <div class="card leyenda">
+    <span><i class="swatch" style="background:var(--elegido-fill); border-color:var(--elegido);"></i> nodo en movimiento</span>
+    <span><i class="swatch" style="background:var(--padre-fill); border-color:var(--padre);"></i> padre comparado</span>
+    <span><i class="swatch" style="background:var(--hijo-fill); border-color:var(--hijo);"></i> hijo comparado</span>
+  </div>
+
+  <div class="card viz">
+    <svg id="arbol" viewBox="0 0 640 60" role="img" aria-label="Árbol del heap"></svg>
+    <div class="arreglo" id="arreglo"></div>
+    <div class="codigo-arr" id="codigoArr">[]</div>
+    <div id="vacioMsg" class="vacio" hidden>El heap está vacío &mdash; inserten un valor para empezar.</div>
+  </div>
+
+  <div class="card player" id="playerCard" hidden>
+    <button class="btn" id="btnAnterior">&larr; Anterior</button>
+    <button class="btn primario" id="btnPlayPause">▶ Reproducir</button>
+    <button class="btn" id="btnSiguiente">Siguiente &rarr;</button>
+    <span class="progreso" id="progreso">Paso 1 de 1</span>
+    <button class="btn" id="btnFinal">Saltar al final ⏭</button>
+  </div>
+
+  <div class="card bitacora">
+    <h2>Bitácora</h2>
+    <div class="log-lista" id="logLista"></div>
+  </div>
+
+  <p class="nota">Cada inserción o extracción hace, como máximo, tantas comparaciones como niveles tiene el árbol: <code>O(log n)</code>. Para que el dibujo no se amontone, este visualizador soporta hasta 15 elementos.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var LIMITE = 15;
+  var esMin = true;
+  var heap = [];
+  var frames = [];
+  var pasoActual = 0;
+  var reproduciendo = false;
+  var temporizador = null;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var svg = $('arbol'), arregloEl = $('arreglo'), codigoArrEl = $('codigoArr'), vacioMsg = $('vacioMsg');
+  var playerCard = $('playerCard'), progresoEl = $('progreso'), logLista = $('logLista');
+
+  function guardar(){
+    try{ localStorage.setItem('heapviz_estado', JSON.stringify({heap:heap, esMin:esMin})); }catch(e){}
+  }
+  function cargarGuardado(){
+    try{
+      var raw = localStorage.getItem('heapviz_estado');
+      if(!raw) return false;
+      var d = JSON.parse(raw);
+      if(Array.isArray(d.heap)){ heap = d.heap; esMin = !!d.esMin; return true; }
+    }catch(e){}
+    return false;
+  }
+
+  function cmp(a,b){ return esMin ? a < b : a > b; }
+
+  function construirFramesInsertar(arrInicial, valor){
+    var arr = arrInicial.slice();
+    arr.push(valor);
+    var i = arr.length - 1;
+    var fr = [];
+    fr.push({arr:arr.slice(), hl:obj(i,'elegido'), msg:'Se agrega '+valor+' al final del arreglo, en el índice '+i+'.'});
+    var terminoPorPropiedad = false;
+    while(i > 0){
+      var p = Math.floor((i-1)/2);
+      fr.push({arr:arr.slice(), hl:obj(i,'elegido',p,'padre'), msg:'Se compara el nodo en el índice '+i+' ('+arr[i]+') con su padre en el índice '+p+' ('+arr[p]+').'});
+      if(cmp(arr[i], arr[p])){
+        var t = arr[i]; arr[i] = arr[p]; arr[p] = t;
+        fr.push({arr:arr.slice(), hl:obj(p,'elegido',i,'padre'), msg:(esMin?'Es menor':'Es mayor')+' que su padre: se intercambian.'});
+        i = p;
+      } else {
+        fr.push({arr:arr.slice(), hl:obj(i,'elegido',p,'padre'), msg:'Ya cumple la propiedad de heap ('+(esMin?'no es menor':'no es mayor')+' que su padre). Termina la inserción.'});
+        terminoPorPropiedad = true;
+        break;
+      }
+    }
+    if(!terminoPorPropiedad){
+      fr.push({arr:arr.slice(), hl:obj(i,'elegido'), msg:'Llegó a la raíz (índice 0). Termina la inserción.'});
+    }
+    return fr;
+  }
+
+  function construirFramesExtraer(arrInicial){
+    var arr = arrInicial.slice();
+    if(arr.length === 0) return null;
+    var raiz = arr[0];
+    var fr = [];
+    fr.push({arr:arr.slice(), hl:obj(0,'elegido'), msg:'Se guarda la raíz ('+raiz+') para devolverla al final.'});
+    var ultimo = arr.pop();
+    if(arr.length === 0){
+      fr.push({arr:arr.slice(), hl:{}, msg:'El heap queda vacío. Se devuelve '+raiz+'.'});
+      return {fr:fr, resultado:raiz};
+    }
+    arr[0] = ultimo;
+    fr.push({arr:arr.slice(), hl:obj(0,'elegido'), msg:'Se mueve el último elemento ('+ultimo+') a la raíz y se quita del final.'});
+    var i = 0;
+    while(true){
+      var n = arr.length, izq = 2*i+1, der = 2*i+2, mejor = i;
+      if(izq < n && cmp(arr[izq], arr[mejor])) mejor = izq;
+      if(der < n && cmp(arr[der], arr[mejor])) mejor = der;
+      var hl = obj(i,'elegido');
+      if(izq < n) hl[izq] = 'hijo';
+      if(der < n) hl[der] = 'hijo';
+      var desc = izq<n ? ('índice '+izq+': '+arr[izq]) : '';
+      if(der<n) desc += (desc?' e ':'') + 'índice '+der+': '+arr[der];
+      fr.push({arr:arr.slice(), hl:hl, msg:'Se compara el nodo en el índice '+i+' ('+arr[i]+') con su'+(der<n?'s hijos':' hijo')+' ('+desc+').'});
+      if(mejor === i){
+        fr.push({arr:arr.slice(), hl:obj(i,'elegido'), msg:'Ya cumple la propiedad de heap. Termina la extracción.'});
+        break;
+      }
+      var t = arr[i]; arr[i] = arr[mejor]; arr[mejor] = t;
+      fr.push({arr:arr.slice(), hl:obj(i,'hijo',mejor,'elegido'), msg:'Se intercambia con el hijo '+(mejor===izq?'izquierdo':'derecho')+'.'});
+      i = mejor;
+    }
+    fr.push({arr:arr.slice(), hl:{}, msg:'Se devuelve '+raiz+'.'});
+    return {fr:fr, resultado:raiz};
+  }
+
+  function obj(){
+    var o = {};
+    for(var k=0;k<arguments.length;k+=2) o[arguments[k]] = arguments[k+1];
+    return o;
+  }
+
+  function iniciarReproduccion(fr){
+    frames = fr;
+    pasoActual = 0;
+    heap = frames[frames.length-1].arr.slice();
+    playerCard.hidden = frames.length <= 1;
+    renderLog();
+    renderFrame(0);
+    setControlesHabilitados(false);
+    if(frames.length > 1){
+      reproduciendo = true;
+      $('btnPlayPause').textContent = '⏸ Pausar';
+      programarSiguiente();
+    } else {
+      terminarReproduccion();
+    }
+  }
+
+  function programarSiguiente(){
+    clearTimeout(temporizador);
+    temporizador = setTimeout(function(){
+      if(!reproduciendo) return;
+      if(pasoActual < frames.length - 1){
+        pasoActual++;
+        renderFrame(pasoActual);
+        programarSiguiente();
+      } else {
+        pausar();
+      }
+    }, 900);
+  }
+
+  function pausar(){
+    reproduciendo = false;
+    clearTimeout(temporizador);
+    $('btnPlayPause').textContent = '▶ Reproducir';
+    if(pasoActual >= frames.length - 1) terminarReproduccion();
+  }
+
+  function terminarReproduccion(){
+    reproduciendo = false;
+    clearTimeout(temporizador);
+    setControlesHabilitados(true);
+    guardar();
+  }
+
+  function setControlesHabilitados(on){
+    ['btnInsertar','btnExtraer','btnAleatorio','btnEjemplo','btnReiniciar','btnMin','btnMax','valorInput'].forEach(function(id){
+      $(id).disabled = !on;
+    });
+  }
+
+  function renderFrame(idx){
+    var f = frames[idx];
+    dibujarArbol(f.arr, f.hl);
+    dibujarArreglo(f.arr, f.hl);
+    progresoEl.textContent = 'Paso '+(idx+1)+' de '+frames.length;
+    marcarLogActivo(idx);
+  }
+
+  function renderLog(){
+    logLista.innerHTML = '';
+    frames.forEach(function(f, idx){
+      var div = document.createElement('div');
+      div.className = 'log-item';
+      div.id = 'log-'+idx;
+      div.innerHTML = '<b>'+(idx+1)+'.</b> '+f.msg;
+      logLista.appendChild(div);
+    });
+  }
+
+  function marcarLogActivo(idx){
+    var prev = logLista.querySelector('.activo');
+    if(prev) prev.classList.remove('activo');
+    var cur = $('log-'+idx);
+    if(cur){ cur.classList.add('activo'); cur.scrollIntoView({block:'nearest'}); }
+  }
+
+  function dibujarArreglo(arr, hl){
+    arregloEl.innerHTML = '';
+    if(arr.length === 0){
+      vacioMsg.hidden = false;
+    } else {
+      vacioMsg.hidden = true;
+    }
+    arr.forEach(function(v, i){
+      var celda = document.createElement('div');
+      celda.className = 'celda';
+      var caja = document.createElement('div');
+      caja.className = 'caja' + (hl[i] ? (' '+hl[i]) : '');
+      caja.textContent = v;
+      var idx = document.createElement('div');
+      idx.className = 'idx';
+      idx.textContent = i;
+      celda.appendChild(caja);
+      celda.appendChild(idx);
+      arregloEl.appendChild(celda);
+    });
+    codigoArrEl.textContent = '[' + arr.join(', ') + ']';
+  }
+
+  function dibujarArbol(arr, hl){
+    var n = arr.length;
+    svg.innerHTML = '';
+    if(n === 0){
+      svg.setAttribute('viewBox', '0 0 640 60');
+      return;
+    }
+    var maxLevel = Math.floor(Math.log2(n)) ;
+    var levelH = 86, radio = 22, top = 34, width = 640;
+    var height = top + maxLevel*levelH + radio + 16;
+    svg.setAttribute('viewBox', '0 0 '+width+' '+height);
+
+    function pos(i){
+      var level = Math.floor(Math.log2(i+1));
+      var firstInLevel = Math.pow(2, level) - 1;
+      var posInLevel = i - firstInLevel;
+      var countInLevel = Math.pow(2, level);
+      var x = (posInLevel + 0.5) * (width / countInLevel);
+      var y = top + level * levelH;
+      return {x:x, y:y};
+    }
+
+    var ns = 'http://www.w3.org/2000/svg';
+    // aristas primero, para que queden detras de los nodos
+    for(var i=1;i<n;i++){
+      var p = Math.floor((i-1)/2);
+      var a = pos(i), b = pos(p);
+      var line = document.createElementNS(ns,'line');
+      line.setAttribute('x1', b.x); line.setAttribute('y1', b.y);
+      line.setAttribute('x2', a.x); line.setAttribute('y2', a.y);
+      line.setAttribute('stroke', 'var(--border)');
+      line.setAttribute('stroke-width', '1.6');
+      svg.appendChild(line);
+    }
+    for(var j=0;j<n;j++){
+      var c = pos(j);
+      var rol = hl[j];
+      var circ = document.createElementNS(ns,'circle');
+      circ.setAttribute('cx', c.x); circ.setAttribute('cy', c.y); circ.setAttribute('r', radio);
+      circ.setAttribute('class','nodo-circ');
+      circ.setAttribute('fill', rol ? 'var(--'+rol+'-fill)' : 'var(--surface)');
+      circ.setAttribute('stroke', rol ? 'var(--'+rol+')' : 'var(--border)');
+      svg.appendChild(circ);
+      var txt = document.createElementNS(ns,'text');
+      txt.setAttribute('x', c.x); txt.setAttribute('y', c.y+1);
+      txt.setAttribute('class','nodo-txt');
+      txt.setAttribute('fill','var(--fg)');
+      txt.setAttribute('font-size','15');
+      txt.textContent = arr[j];
+      svg.appendChild(txt);
+    }
+  }
+
+  function operar(tipo){
+    if(reproduciendo) return;
+    if(tipo === 'insertar'){
+      var v = parseInt($('valorInput').value, 10);
+      if(isNaN(v)){ $('valorInput').focus(); return; }
+      if(heap.length >= LIMITE){ alertaLimite(); return; }
+      $('valorInput').value = '';
+      iniciarReproduccion(construirFramesInsertar(heap, v));
+    } else if(tipo === 'aleatorio'){
+      if(heap.length >= LIMITE){ alertaLimite(); return; }
+      var r = Math.floor(Math.random()*90)+10;
+      iniciarReproduccion(construirFramesInsertar(heap, r));
+    } else if(tipo === 'extraer'){
+      var res = construirFramesExtraer(heap);
+      if(!res){ return; }
+      iniciarReproduccion(res.fr);
+    }
+  }
+
+  function alertaLimite(){
+    logLista.innerHTML = '<div class="log-item">Llegaron a '+LIMITE+' elementos, el máximo que este visualizador dibuja con claridad. Extraigan algunos o reinicien para seguir experimentando.</div>';
+  }
+
+  $('btnInsertar').addEventListener('click', function(){ operar('insertar'); });
+  $('valorInput').addEventListener('keydown', function(e){ if(e.key === 'Enter') operar('insertar'); });
+  $('btnExtraer').addEventListener('click', function(){ operar('extraer'); });
+  $('btnAleatorio').addEventListener('click', function(){ operar('aleatorio'); });
+  $('btnEjemplo').addEventListener('click', function(){
+    if(reproduciendo) return;
+    heap = [];
+    dibujarArbol([], {}); dibujarArreglo([], {});
+    var ejemplo = [5,3,8,1];
+    var actual = [];
+    var todosFrames = [];
+    ejemplo.forEach(function(v){
+      var fr = construirFramesInsertar(actual, v);
+      todosFrames = todosFrames.concat(fr);
+      actual = fr[fr.length-1].arr.slice();
+    });
+    iniciarReproduccion(todosFrames);
+  });
+  $('btnReiniciar').addEventListener('click', function(){
+    if(reproduciendo) return;
+    heap = [];
+    frames = [{arr:[], hl:{}, msg:'Heap reiniciado.'}];
+    pasoActual = 0;
+    playerCard.hidden = true;
+    renderLog();
+    renderFrame(0);
+    guardar();
+  });
+
+  $('btnAnterior').addEventListener('click', function(){
+    if(reproduciendo) pausar();
+    if(pasoActual > 0){ pasoActual--; renderFrame(pasoActual); }
+  });
+  $('btnSiguiente').addEventListener('click', function(){
+    if(reproduciendo) pausar();
+    if(pasoActual < frames.length-1){ pasoActual++; renderFrame(pasoActual); }
+    else { terminarReproduccion(); }
+  });
+  $('btnFinal').addEventListener('click', function(){
+    pausar();
+    pasoActual = frames.length-1;
+    renderFrame(pasoActual);
+    terminarReproduccion();
+  });
+  $('btnPlayPause').addEventListener('click', function(){
+    if(reproduciendo){ pausar(); terminarReproduccion(); }
+    else {
+      if(pasoActual >= frames.length-1) return;
+      reproduciendo = true;
+      $('btnPlayPause').textContent = '⏸ Pausar';
+      setControlesHabilitados(false);
+      programarSiguiente();
+    }
+  });
+
+  function elegirModo(min){
+    if(reproduciendo || esMin === min) return;
+    esMin = min;
+    $('btnMin').setAttribute('aria-pressed', String(min));
+    $('btnMax').setAttribute('aria-pressed', String(!min));
+    $('notaModo').innerHTML = min ? 'Siempre sale primero el <b>menor</b> valor.' : 'Siempre sale primero el <b>mayor</b> valor.';
+    heap = [];
+    frames = [{arr:[], hl:{}, msg:'Se cambió de modo: el heap se reinició.'}];
+    pasoActual = 0;
+    playerCard.hidden = true;
+    renderLog();
+    renderFrame(0);
+    guardar();
+  }
+  $('btnMin').addEventListener('click', function(){ elegirModo(true); });
+  $('btnMax').addEventListener('click', function(){ elegirModo(false); });
+
+  // estado inicial
+  (function init(){
+    var huboGuardado = cargarGuardado();
+    $('btnMin').setAttribute('aria-pressed', String(esMin));
+    $('btnMax').setAttribute('aria-pressed', String(!esMin));
+    $('notaModo').innerHTML = esMin ? 'Siempre sale primero el <b>menor</b> valor.' : 'Siempre sale primero el <b>mayor</b> valor.';
+    frames = [{arr:heap.slice(), hl:{}, msg: huboGuardado && heap.length ? 'Se recuperó el heap de tu sesión anterior.' : 'Heap vacío. Inserten un valor para empezar.'}];
+    pasoActual = 0;
+    renderLog();
+    renderFrame(0);
+    playerCard.hidden = true;
+  })();
+})();
+</script>
+</body>
+</html>
