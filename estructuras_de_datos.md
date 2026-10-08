@@ -705,17 +705,76 @@ Ahora la parte que conecta con la sección de arriba: implementen la cola circul
 
 ### Qué problema resuelve
 
-A veces no importa quién llegó primero, sino quién es **más urgente**. Una cola de prioridad siempre entrega el elemento de mayor (o menor) prioridad, sin importar el orden de llegada.
+A veces no importa quién llegó primero, sino quién es **más urgente**. Una cola de prioridad siempre entrega el elemento de mayor (o menor) prioridad, sin importar el orden de llegada — es una `Cola`, pero donde el "frente" no lo decide quién llegó antes, sino quién tiene la prioridad más alta.
+
+> **Experimenten antes de leer el resto:** [Heap Interactivo](https://claude.ai/artifact/F2dR2TNes3vq3pxreRfdxi) — inserten y extraigan valores, en modo mínimo o máximo, y vean paso a paso (con una bitácora que explica cada comparación) cómo se reacomoda tanto el árbol como el arreglo. Jueguen con él un rato antes de seguir leyendo; las siguientes secciones explican exactamente lo que van a ver ahí.
 
 ### Cómo se ve por dentro
 
-Se implementa con un **heap**: un árbol binario casi-completo donde cada nodo es menor o igual que sus hijos (heap mínimo) o mayor o igual que sus hijos (heap máximo). Guardado en un arreglo, sin necesitar nodos ni referencias explícitas.
+Se implementa con un **heap**: un árbol binario casi-completo donde cada nodo es menor o igual que sus hijos (heap mínimo) o mayor o igual que sus hijos (heap máximo). "Casi-completo" quiere decir que se llena nivel por nivel, de izquierda a derecha, sin huecos — por eso se puede guardar en un arreglo, sin necesitar nodos ni referencias explícitas como en un árbol binario de búsqueda.
 
 ![Heap máximo representado como árbol y como arreglo](img/heap_maxheap.svg)
 
 *Heap máximo: arriba, como árbol; abajo, la misma información guardada como arreglo (así se implementa de verdad). Autor: Ermishin, CC BY-SA 3.0 — Wikimedia Commons.*
 
-Piensen en una fila de urgencias: no importa el orden en que llegaron los pacientes, siempre se atiende primero al más grave. Eso es un heap mínimo por gravedad — o, visto al reves, un heap máximo por urgencia.
+Piensen en una fila de urgencias: no importa el orden en que llegaron los pacientes, siempre se atiende primero al más grave. Eso es un heap mínimo por gravedad — o, visto al revés, un heap máximo por urgencia.
+
+### Cómo se calculan padre e hijos sin guardar referencias
+
+Esta es la pieza que hace que todo lo demás funcione: dado el índice `i` de un nodo en el arreglo, sus parientes se calculan con **aritmética pura**, sin recorrer nada:
+
+```python
+def padre(i):
+    return (i - 1) // 2
+
+def hijo_izquierdo(i):
+    return 2 * i + 1
+
+def hijo_derecho(i):
+    return 2 * i + 2
+```
+
+![Relación entre las posiciones del árbol y los índices del arreglo en un heap](img/heap_indices.svg)
+
+*El nodo naranja está en el índice 1. Su padre (azul) está en `(1-1)//2 = 0`; sus hijos (verde) están en `2·1+1 = 3` y `2·1+2 = 4`. La misma fórmula funciona para cualquier nodo del heap.*
+
+Comparen esto con una lista enlazada, donde cada nodo necesita guardar explícitamente una referencia a sus vecinos: aquí la "referencia" es nada más una cuenta aritmética sobre el índice. Es la misma idea de "la posición se calcula, no se guarda" que ya vieron en Arreglos — solo que ahora la fórmula no es `inicio + i * tamano`, sino estas tres.
+
+### Insertar: reacomodar hacia arriba (sift-up)
+
+1. El valor nuevo se agrega **al final** del arreglo (siguiente casilla libre, igual que `append`).
+2. Mientras sea menor que su padre (heap mínimo) **y** no haya llegado a la raíz, se intercambia con él.
+3. Se repite el paso 2 con la nueva posición, "burbujeando" hacia arriba hasta que encuentre su lugar.
+
+Como el árbol tiene `log₂ n` niveles, el valor nuevo sube **a lo mucho** `log₂ n` veces — por eso insertar es `O(log n)`, mucho más barato que reordenar todo el arreglo.
+
+Trace de insertar 5, 3, 8, 1 en ese orden, en un heap mínimo vacío:
+
+| Paso | Qué pasa | Arreglo |
+|---|---|---|
+| `insertar(5)` | único elemento, no tiene padre | `[5]` |
+| `insertar(3)` | se agrega al final; `3 < padre(5)` → se intercambian | `[3, 5]` |
+| `insertar(8)` | se agrega al final; `8 < padre(3)`? no, se queda | `[3, 5, 8]` |
+| `insertar(1)` | se agrega al final; `1 < padre(5)` → sube; `1 < padre(3)` → sube hasta la raíz | `[1, 3, 8, 5]` |
+
+### Extraer el mínimo: reacomodar hacia abajo (sift-down)
+
+1. La raíz (índice 0) es siempre el mínimo — eso es justo lo que se va a devolver.
+2. Se mueve el **último** elemento del arreglo a la posición 0 (y se quita del final) — es el único movimiento que mantiene la estructura "casi-completa" sin dejar huecos.
+3. Mientras ese elemento sea mayor que alguno de sus dos hijos, se intercambia con el **menor** de los dos. Se repite hasta que quede en su lugar o llegue a una hoja.
+
+Igual que insertar, cada intercambio baja un nivel, así que extraer también es `O(log n)`.
+
+Trace de `extraer_minimo()` sobre `[1, 3, 8, 5]` (el resultado del trace anterior):
+
+| Paso | Qué pasa | Arreglo |
+|---|---|---|
+| Guardar la raíz | `minimo = 1` (esto es lo que se va a devolver) | `[1, 3, 8, 5]` |
+| Mover el último a la raíz | el último elemento (`5`) pasa al índice 0 y se quita del final | `[5, 3, 8]` |
+| Comparar con los hijos | hijos de la raíz: `3` y `8`; el menor es `3`, y `5 > 3` → se intercambian | `[3, 5, 8]` |
+| Comparar de nuevo | el nodo (ahora en índice 1) no tiene hijos (índices 3 y 4 no existen) → termina | `[3, 5, 8]` |
+
+`extraer_minimo()` devuelve `1`, y el heap queda en `[3, 5, 8]`.
 
 ### Operaciones y su costo
 
@@ -737,7 +796,77 @@ Se elige un heap cuando se necesita repetidamente **"dame el más urgente/peque�
 
 ### Implementación en Python
 
-Python trae `heapq`, que convierte una lista común en un heap mínimo:
+Para ser consistentes con cómo construimos todo lo demás en el curso (`ArregloFijo`, `ListaEnlazada`, `Pila`, `Cola`), así se ve un heap mínimo como clase, con el sift-up y el sift-down de arriba escritos explícitamente:
+
+```python
+class Heap:
+    def __init__(self):
+        self._datos = []
+
+    def _padre(self, i):
+        return (i - 1) // 2
+
+    def _hijo_izquierdo(self, i):
+        return 2 * i + 1
+
+    def _hijo_derecho(self, i):
+        return 2 * i + 2
+
+    def insertar(self, valor):
+        self._datos.append(valor)
+        self._reacomodar_hacia_arriba(len(self._datos) - 1)
+
+    def _reacomodar_hacia_arriba(self, i):
+        while i > 0 and self._datos[i] < self._datos[self._padre(i)]:
+            p = self._padre(i)
+            self._datos[i], self._datos[p] = self._datos[p], self._datos[i]
+            i = p
+
+    def extraer_minimo(self):
+        if self.esta_vacio():
+            raise IndexError("Heap vacio")
+        minimo = self._datos[0]
+        ultimo = self._datos.pop()
+        if self._datos:
+            self._datos[0] = ultimo
+            self._reacomodar_hacia_abajo(0)
+        return minimo
+
+    def _reacomodar_hacia_abajo(self, i):
+        n = len(self._datos)
+        while True:
+            izq, der = self._hijo_izquierdo(i), self._hijo_derecho(i)
+            menor = i
+            if izq < n and self._datos[izq] < self._datos[menor]:
+                menor = izq
+            if der < n and self._datos[der] < self._datos[menor]:
+                menor = der
+            if menor == i:
+                break
+            self._datos[i], self._datos[menor] = self._datos[menor], self._datos[i]
+            i = menor
+
+    def ver_minimo(self):
+        if self.esta_vacio():
+            raise IndexError("Heap vacio")
+        return self._datos[0]
+
+    def esta_vacio(self):
+        return len(self._datos) == 0
+```
+
+`_reacomodar_hacia_arriba` y `_reacomodar_hacia_abajo` son exactamente los dos algoritmos de las secciones anteriores, línea por línea. Pruébenla con el mismo trace de arriba:
+
+```python
+h = Heap()
+for v in [5, 3, 8, 1]:
+    h.insertar(v)
+print(h._datos)              # [1, 3, 8, 5]
+print(h.extraer_minimo())    # 1
+print(h._datos)              # [3, 5, 8]
+```
+
+En la práctica real, nadie escribe esta clase desde cero cada vez: Python trae `heapq`, que hace exactamente lo mismo (sift-up y sift-down, con otros nombres: `heapq._siftup` / `heapq._siftdown`) pero optimizado en C. Es el mismo patrón que ya vieron con `Cola`/`ColaCircular` y `deque`: primero se entiende la estructura programándola a mano, después se usa la versión de la librería estándar.
 
 ```python
 import heapq
@@ -756,14 +885,16 @@ while tareas:
 # 3 planear la siguiente semana
 ```
 
-La tupla `(prioridad, descripción)` funciona porque Python compara tuplas elemento por elemento: primero por prioridad.
+La tupla `(prioridad, descripción)` funciona porque Python compara tuplas elemento por elemento: primero por prioridad. `heapq` siempre es un heap **mínimo**; para simular uno máximo (como en la práctica de abajo), se invierte el signo de la prioridad al insertar.
 
-### Práctica: sala de urgencias
+### Práctica: experimentar, programar y atender la sala de urgencias
 
-1. Modelen una sala de urgencias con `heapq`: cada paciente entra como `(nivel_gravedad, nombre)`, donde `1` es lo más grave.
-2. Inserten 6 pacientes en un orden de llegada que **no** coincida con su gravedad.
-3. Atiendan (extraigan) a todos e impriman el orden real de atención.
-4. Respondan por escrito: si hubieran usado una `Cola` normal (FIFO) en vez de un heap, ¿qué hubiera pasado con el paciente más grave si llegó de último?
+1. Antes de programar nada, usen el [Heap Interactivo](https://claude.ai/artifact/F2dR2TNes3vq3pxreRfdxi): inserten los valores `5, 3, 8, 1` uno por uno en modo heap mínimo y comparen, paso a paso, contra el trace de la sección "Insertar" de arriba. Después extraigan y comparen contra el trace de "Extraer". Deben coincidir exactamente.
+2. Completen `_reacomodar_hacia_arriba` y `_reacomodar_hacia_abajo` ustedes mismos en un archivo nuevo, **sin ver el código de arriba**, guiándose solo por la descripción en prosa de "Insertar" y "Extraer". Comparen después contra la implementación del documento.
+3. Modelen una sala de urgencias con `heapq`: cada paciente entra como `(nivel_gravedad, nombre)`, donde `1` es lo más grave.
+4. Inserten 6 pacientes en un orden de llegada que **no** coincida con su gravedad.
+5. Atiendan (extraigan) a todos e impriman el orden real de atención.
+6. Respondan por escrito: si hubieran usado una `Cola` normal (FIFO) en vez de un heap, ¿qué hubiera pasado con el paciente más grave si llegó de último?
 
 ---
 
