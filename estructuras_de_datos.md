@@ -715,13 +715,13 @@ Se implementa con un **heap**: un árbol binario casi-completo donde cada nodo e
 
 ![Heap máximo representado como árbol y como arreglo](img/heap_maxheap.svg)
 
-*Heap máximo: arriba, como árbol; abajo, la misma información guardada como arreglo (así se implementa de verdad). Autor: Ermishin, CC BY-SA 3.0 — Wikimedia Commons.*
+*Heap máximo: arriba, como árbol; abajo, la misma información guardada como arreglo. Autor: Ermishin, CC BY-SA 3.0 — Wikimedia Commons.*
 
 Piensen en una fila de urgencias: no importa el orden en que llegaron los pacientes, siempre se atiende primero al más grave. Eso es un heap mínimo por gravedad — o, visto al revés, un heap máximo por urgencia.
 
 ### Cómo se calculan padre e hijos sin guardar referencias
 
-Esta es la pieza que hace que todo lo demás funcione: dado el índice `i` de un nodo en el arreglo, sus parientes se calculan con **aritmética pura**, sin recorrer nada:
+Esta es lo que hace que todo lo demás funcione, dado el índice `i` de un nodo en el arreglo, sus parientes se calculan con **aritmética**, sin recorrer nada:
 
 ```python
 def padre(i):
