@@ -885,16 +885,93 @@ while tareas:
 # 3 planear la siguiente semana
 ```
 
-La tupla `(prioridad, descripción)` funciona porque Python compara tuplas elemento por elemento: primero por prioridad. `heapq` siempre es un heap **mínimo**; para simular uno máximo (como en la práctica de abajo), se invierte el signo de la prioridad al insertar.
+La tupla `(prioridad, descripción)` funciona porque Python compara tuplas elemento por elemento: primero por prioridad y, si empatan, por descripción. Las funciones `heappush` y `heappop` trabajan con un heap **mínimo**; también se puede representar una prioridad máxima invirtiendo su signo al insertar.
 
-### Práctica: experimentar, programar y atender la sala de urgencias
+### Práctica: ¿a quién atendemos ahora?
 
-1. Antes de programar nada, usen el [Heap Interactivo](https://sergiouaq.github.io/Estructuras-de-Datos/interactivos/heap_interactivo.html): inserten los valores `5, 3, 8, 1` uno por uno en modo heap mínimo y comparen, paso a paso, contra el trace de la sección "Insertar" de arriba. Después extraigan y comparen contra el trace de "Extraer". Deben coincidir exactamente.
-2. Completen `_reacomodar_hacia_arriba` y `_reacomodar_hacia_abajo` ustedes mismos en un archivo nuevo, **sin ver el código de arriba**, guiándose solo por la descripción en prosa de "Insertar" y "Extraer". Comparen después contra la implementación del documento.
-3. Modelen una sala de urgencias con `heapq`: cada paciente entra como `(nivel_gravedad, nombre)`, donde `1` es lo más grave.
-4. Inserten 6 pacientes en un orden de llegada que **no** coincida con su gravedad.
-5. Atiendan (extraigan) a todos e impriman el orden real de atención.
-6. Respondan por escrito: si hubieran usado una `Cola` normal (FIFO) en vez de un heap, ¿qué hubiera pasado con el paciente más grave si llegó de último?
+**Meta:** explicar qué garantiza un heap, programar sus dos reacomodos y usarlo para elegir al siguiente paciente. Trabajen en parejas: una persona predice y otra comprueba; intercambien roles en cada etapa. Las prioridades de esta simulación son datos ficticios ya asignados: `1` representa la mayor urgencia.
+
+**1. Predecir antes de ejecutar**
+
+Sin abrir todavía el interactivo, dibujen como árboles los arreglos siguientes y decidan cuáles son heaps mínimos. Para rechazar uno, señalen una relación padre-hijo que incumpla la propiedad.
+
+- A: `[1, 4, 2, 9, 7, 3]`
+- B: `[1, 4, 2, 9, 3, 7]`
+- C: `[1, 2, 3, 4, 7, 9]`
+
+Discutan: ¿un heap necesita tener todo el arreglo ordenado? ¿Qué posición permite conocer el mínimo sin recorrerlo? ¿Se puede asegurar que el segundo mínimo está siempre en el índice `1`?
+
+Ahora predigan qué pasa al insertar `0` en A. Escriban el arreglo después de agregarlo al final y después de cada intercambio. Expliquen por qué solo hace falta revisar el camino hacia la raíz.
+
+Comprueben con el [Heap Interactivo](https://sergiouaq.github.io/Estructuras-de-Datos/interactivos/heap_interactivo.html), en modo mínimo: construyan A insertando sus valores en el orden mostrado y luego inserten `0`. Si su predicción difiere, expliquen qué comparación les faltó; conserven ambas versiones.
+
+**2. Encontrar el error al extraer**
+
+Partan otra vez de A. Al extraer `1` y mover el último elemento a la raíz queda temporalmente `[3, 4, 2, 9, 7]`.
+
+Un compañero propone: «Como `3` es menor que su hijo izquierdo `4`, ya terminamos».
+
+1. Expliquen el error e identifiquen qué hijo debe compararse antes de decidir un intercambio.
+2. Dibujen el siguiente paso y escriban el arreglo reparado.
+3. Expliquen por qué intercambiar con el hijo izquierdo tampoco resolvería el problema en este caso.
+
+Verifiquen extrayendo el mínimo de A en el interactivo. Antes de avanzar cada paso, digan qué comparación esperan ver. La explicación debe justificar tanto **cuándo intercambiar** como **cuándo detenerse**.
+
+**3. Programar y comprobar la propiedad**
+
+Copien la clase `Heap` de esta sección a un archivo `practica_heaps.py` y sustituyan únicamente los cuerpos de `_reacomodar_hacia_arriba` y `_reacomodar_hacia_abajo` por su propia implementación. Pueden consultar las descripciones y sus dibujos. Antes de escribir los ciclos, anoten en palabras la condición de intercambio y la condición de parada de cada método.
+
+Agreguen esta función de comprobación:
+
+```python
+def es_heap_minimo(datos):
+    return all(datos[(i - 1) // 2] <= datos[i]
+               for i in range(1, len(datos)))
+```
+
+Después de **cada** inserción y extracción, comprueben `es_heap_minimo(h._datos)`. Extraigan todos los valores y comprueben también que la salida coincide con `sorted(entrada)`. Prueben estas entradas:
+
+- `[5, 3, 8, 1]`: caso inicial.
+- `[1, 2, 3, 4]`: inserciones que no requieren subir.
+- `[4, 3, 2, 1]`: inserciones que sí requieren subir.
+- `[2, 2, 1, 2]`: valores repetidos.
+- `[7]` y `[]`: un elemento y heap vacío; extraer del vacío debe producir el `IndexError` previsto por la clase.
+
+Si algo falla, registren la primera operación que rompe la propiedad y la relación padre-hijo afectada. Una salida final correcta por sí sola no demuestra que el heap estuvo bien después de cada operación.
+
+**4. Simular una sala con nuevas llegadas**
+
+Usen ahora `heapq`. Guarden cada paciente como `(gravedad, turno_llegada, nombre)`, con un turno consecutivo que aumente en cada llegada. Así, entre pacientes de la misma gravedad, se atiende primero a quien llegó antes. Antes de programar, expliquen qué ocurriría con los empates si guardaran solamente `(gravedad, nombre)`.
+
+Ejecuten estos eventos en el orden indicado. **Antes de cada atención**, anoten a quién esperan atender y por qué; después comparen con el resultado del programa.
+
+| Evento | Acción |
+| --- | --- |
+| 1 | Llega Lucía, gravedad `3` |
+| 2 | Llega Zoe, gravedad `1` |
+| 3 | Llega Ana, gravedad `1` |
+| 4 | Atender a un paciente |
+| 5 | Llega Diego, gravedad `2` |
+| 6 | Llega Omar, gravedad `1` |
+| 7 | Atender a un paciente |
+| 8 | Llega Eva, gravedad `2` |
+| 9 | Atender a todos los que quedan |
+| 10 | Intentar atender con la sala vacía: mostrar un mensaje |
+
+Impriman el nombre y la gravedad en cada atención. Consulten el próximo paciente con `sala[0]`, comprobando primero que la sala no esté vacía. Para conocer el orden completo de atención, extraigan de una **copia** del heap: recorrer el arreglo interno no equivale a recorrer una lista ordenada.
+
+Repitan los mismos eventos con una cola FIFO y comparen los órdenes. Expliquen una diferencia causada por la gravedad y otra decisión resuelta por el turno de llegada. Consideren solo a los pacientes que ya están esperando en cada evento.
+
+**Entrega y cierre**
+
+Entreguen el archivo ejecutable, sus predicciones con las correcciones y una respuesta breve a estas preguntas:
+
+- ¿Qué garantiza la propiedad padre-hijo y qué no garantiza sobre el arreglo completo?
+- ¿Por qué al insertar se sube y al extraer se baja? Usen uno de sus dibujos como evidencia.
+- ¿Por qué cada reacomodo recorre como máximo la altura del árbol y qué complejidad tiene?
+- Si solo quisieran imprimir una lista fija de pacientes ordenada una vez, ¿qué ventaja tendría usar `sorted`? ¿Qué cambia cuando llegan nuevos pacientes entre atenciones?
+
+La revisión considerará las explicaciones de los movimientos, la propiedad del heap después de cada operación y la simulación con empates y sala vacía. **No basta con entregar el orden final de atención.**
 
 ---
 
