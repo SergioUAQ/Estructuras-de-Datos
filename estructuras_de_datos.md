@@ -1049,12 +1049,12 @@ Se elige un árbol cuando los datos tienen una **relación jerárquica natural**
 Insertar siempre agrega una hoja nueva — nunca rompe nada. Eliminar es más delicado: hay que quitar un nodo de **en medio** del árbol sin romper la regla del BST para nadie más. Hay exactamente tres casos, según cuántos hijos tenga el nodo que se va:
 
 1. **Sin hijos (hoja):** se quita directo, nadie pierde su lugar.
-2. **Un solo hijo:** ese hijo sube y ocupa el lugar del nodo eliminado — igual que sacar un eslabón de una lista enlazada.
-3. **Dos hijos:** aquí está la parte que suele confundir. No se puede "quitar y ya", porque alguien tiene que ocupar su lugar sin romper el orden. La solución: se reemplaza por su **sucesor** (el valor más chico de su subárbol derecho — se llega ahí bajando una vez a la derecha y luego todo a la izquierda), y después se elimina ese sucesor de su posición original. El sucesor, por construcción, **nunca tiene hijo izquierdo** (si lo tuviera, ese hijo sería aún más chico y el sucesor real sería otro), así que eliminarlo de su posición original siempre cae en el caso 1 o el caso 2 — nunca hace falta repetir el caso 3 dos veces.
+2. **Un solo hijo:** ese hijo sube y ocupa el lugar del nodo eliminado, igual que sacar un eslabón de una lista enlazada.
+3. **Dos hijos:** aquí está la parte que suele confundir. No se puede "quitar y ya", porque alguien tiene que ocupar su lugar sin romper el orden. La solución se reemplaza por su **sucesor** (el valor más chico de su subárbol derecho, se llega ahí bajando una vez a la derecha y luego todo a la izquierda) y después se elimina ese sucesor de su posición original. El sucesor, por construcción, **nunca tiene hijo izquierdo** (si lo tuviera, ese hijo sería aún más chico y el sucesor real sería otro), así que eliminarlo de su posición original siempre cae en el caso 1 o el caso 2, nunca hace falta repetir el caso 3 dos veces.
 
 ![Eliminar un nodo con dos hijos: se reemplaza por su sucesor](img/arbol_eliminar_dos_hijos.svg)
 
-*Al eliminar 3 (tiene dos hijos), su sucesor es 4 (el menor del subárbol derecho). Se copia 4 a la posición de 3, y el 4 original se quita de donde estaba — ahí sí es un caso "sin hijos".*
+*Al eliminar 3 (tiene dos hijos), su sucesor es 4 (el menor del subárbol derecho). Se copia 4 a la posición de 3, y el 4 original se quita de donde estaba, ahí sí es un caso "sin hijos".*
 
 ### Implementación en Python
 
@@ -1166,30 +1166,6 @@ def post_orden(nodo, resultado):
     resultado.append(nodo.valor)
 ```
 
-### Conexión con Minería de Datos: árboles de decisión
-
-Si llevan o van a llevar Minería de Datos, van a volver a encontrarse con árboles — pero resolviendo un problema distinto: **clasificación**. Un árbol de decisión también se construye de arriba hacia abajo, de forma recursiva (el llamado algoritmo de Hunt, la misma idea de "divide y vencerás" que ya vieron en merge sort), y clasificar un registro nuevo también significa bajar por el árbol respondiendo preguntas hasta llegar a una hoja — estructuralmente, es el mismo patrón que `_insertar` y `buscar`.
-
-La diferencia está en **qué pregunta hace cada nodo**:
-
-- En un BST, todos los nodos preguntan lo mismo sobre la misma llave: *"¿es menor o mayor que este valor?"*
-- En un árbol de decisión, cada nodo interno pregunta sobre un **atributo distinto** del registro (`¿Refund = Yes?`, `¿TaxInc > 80K?`), elegido por el algoritmo de entrenamiento (ID3, C4.5, CART) porque es el que mejor separa las clases en ese punto — eso se mide con fórmulas como Gini o entropía, que van a ver a detalle en Minería de Datos. Las hojas no guardan un valor ordenado, guardan una **decisión** (`Cheat = Yes` / `No`).
-
-```python
-from sklearn.tree import DecisionTreeClassifier
-
-# fit() construye el arbol recursivamente, igual que llamar insertar()
-# muchas veces -- solo que aqui el algoritmo decide el atributo de
-# division en cada nodo, no una comparacion directa de valores.
-modelo = DecisionTreeClassifier(criterion="gini", max_depth=10)
-modelo.fit(datos_entrenamiento, etiquetas)
-
-# predict() camina el arbol para un registro nuevo, igual que buscar()
-prediccion = modelo.predict(datos_nuevos)
-```
-
-Y la conexión que más vale la pena recordar: el **sobreajuste** (*overfitting*) de un árbol de decisión es la misma idea que el árbol degenerado de la sección de arriba, pero con una consecuencia distinta. Un BST desbalanceado solo se pone *lento*. Un árbol de decisión que crece demasiado profundo memoriza los datos de entrenamiento al pie de la letra (incluyendo su ruido) y deja de **generalizar** a datos nuevos — en Minería de Datos lo van a controlar limitando la profundidad (`max_depth`) o podando el árbol después, el equivalente a cómo nosotros resolvemos el desbalance con árboles auto-balanceados: en ambos casos, un árbol más bajo y parejo es preferible a uno que creció sin control.
-
 ### Práctica: agenda de contactos, eliminar y una probadita de clasificación
 
 1. Construyan un `ArbolBinarioBusqueda` e inserten 10 nombres (strings — Python compara strings alfabéticamente, así que el BST funciona igual).
@@ -1197,8 +1173,7 @@ Y la conexión que más vale la pena recordar: el **sobreajuste** (*overfitting*
 3. Inserten los mismos 10 nombres pero ya ordenados alfabéticamente en un árbol nuevo, y comparen la altura contra el árbol del paso 1. Verifiquen su respuesta con el [BST Interactivo](https://sergiouaq.github.io/Estructuras-de-Datos/interactivos/bst_interactivo.html): carguen ambos órdenes y comparen la forma.
 4. Expliquen en una línea por qué la altura cambió tanto, conectándolo con la sección "Por qué el peor caso degenera en una lista".
 5. A mano (sin correr código), tracen qué pasa al llamar `arbol.eliminar(...)` sobre su árbol del paso 1 con: (a) un nombre que sea hoja, (b) un nombre con un solo hijo, (c) la raíz (casi siempre va a caer en el caso de dos hijos). Para cada uno, identifiquen el caso (1, 2 o 3) **antes** de escribirlo, y después verifiquen con la implementación de la sección de arriba.
-6. Implementen `altura(self)` también como parte de la clase y úsenla para confirmar que, después de varios `eliminar`, el árbol del interactivo y el suyo dan la misma altura.
-7. **Para quienes ya vieron o van a ver Minería de Datos:** si tienen a la mano el dataset Iris (o cualquier otro de clasificación), entrenen un `DecisionTreeClassifier` con `max_depth=2` y otro sin límite de profundidad (`max_depth=None`), e impriman la precisión de cada uno sobre datos de **entrenamiento** contra datos de **prueba**. Relacionen lo que observen con la sección "Conexión con Minería de Datos" de arriba: ¿cuál modelo generaliza mejor, y por qué eso se parece a preferir un BST balanceado sobre uno degenerado?
+6. Implementen `altura(self)` también como parte de la clase y úsenla para confirmar que, después de varios `eliminar`, el árbol del interactivo y el suyo dan la misma altura
 
 ---
 
