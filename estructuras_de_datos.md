@@ -989,7 +989,7 @@ Organizar datos con una relación **jerárquica** (no lineal como listas/pilas/c
 
 *Árbol genealógico de ejemplo. Autores: Josef Sábl cz y Mysid, CC BY-SA 3.0 — Wikimedia Commons.*
 
-Un árbol genealógico es la analogía más directa: Lucas Grey (la raíz) tiene hijos, esos hijos tienen sus propios hijos, y así sucesivamente — nadie tiene más de un padre, y no hay ciclos. Un árbol binario de búsqueda es un árbol genealógico con una regla extra de orden.
+Un árbol genealógico es la analogía más directa: Lucas Grey (la raíz) tiene hijos, esos hijos tienen sus propios hijos, y así sucesivamente, nadie tiene más de un padre, y no hay ciclos. Un árbol binario de búsqueda es un árbol genealógico con una regla extra de orden.
 
 ```
         8
@@ -1001,7 +1001,7 @@ Un árbol genealógico es la analogía más directa: Lucas Grey (la raíz) tiene
      4   7  13
 ```
 
-Regla del BST: para cualquier nodo, todo lo de su **subárbol izquierdo es menor**, todo lo de su **subárbol derecho es mayor**.
+Regla del BST, para cualquier nodo, todo lo de su **subárbol izquierdo es menor**, todo lo de su **subárbol derecho es mayor**.
 
 ### Cómo bajan buscar e insertar
 
@@ -1026,7 +1026,7 @@ La tabla de abajo dice "O(log n) en promedio, O(n) en el peor caso" — esto es 
 
 *Los mismos 7 valores: insertados en un orden que "salta" (izquierda) producen un árbol de altura 3; insertados ya ordenados (derecha), cada uno solo puede colgarse a la derecha del anterior — el árbol degenera en una lista enlazada con pasos extra.*
 
-Con el árbol de la derecha, buscar el `7` ya no cuesta 3 comparaciones — cuesta 7, una por cada nodo, exactamente como una lista enlazada. `_insertar` nunca revisa si el árbol se está desbalanceando; simplemente obedece la regla del BST, sin importar qué tan alto quede. Por eso existen los árboles auto-balanceados (AVL, rojo-negro), que después de cada inserción reacomodan el árbol para mantenerlo bajo — mención para un curso más avanzado, no los construimos aquí.
+Con el árbol de la derecha, buscar el `7` ya no cuesta 3 comparaciones — cuesta 7, una por cada nodo, exactamente como una lista enlazada. `_insertar` nunca revisa si el árbol se está desbalanceando; simplemente obedece la regla del BST, sin importar qué tan alto quede. Por eso existen los árboles auto-balanceados (AVL, rojo-negro), que después de cada inserción reacomodan el árbol para mantenerlo bajo.
 
 ### Operaciones y su costo
 
@@ -1040,7 +1040,7 @@ Con el árbol de la derecha, buscar el `7` ya no cuesta 3 comparaciones — cues
 
 - **El sistema de archivos de su computadora:** carpetas dentro de carpetas dentro de carpetas es, literalmente, un árbol. `C:\Usuarios\ana\Documentos\tarea.docx` es una ruta desde la raíz hasta una hoja.
 - **El HTML de cualquier página web:** el navegador construye un árbol (el DOM) donde `<html>` es la raíz, `<body>` es su hijo, y cada etiqueta dentro es hija de la que la contiene. Cuando JavaScript "recorre el DOM", está recorriendo un árbol.
-- **Bases de datos reales:** MySQL, PostgreSQL y SQLite indexan sus tablas con variantes de árboles (B-tree, B+tree) precisamente para que un `WHERE id = 42` sea O(log n) en vez de tener que revisar cada fila.
+- **Bases de datos:** MySQL, PostgreSQL y SQLite indexan sus tablas con variantes de árboles (B-tree, B+tree) precisamente para que un `WHERE id = 42` sea O(log n) en vez de tener que revisar cada fila.
 
 Se elige un árbol cuando los datos tienen una **relación jerárquica natural** y se necesita buscar rápido dentro de esa jerarquía.
 
