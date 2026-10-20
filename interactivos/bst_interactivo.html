@@ -49,7 +49,7 @@ h1{font-family:var(--font-display); font-size:clamp(22px,4vw,30px); margin:0 0 2
 .fila + .fila{margin-top:10px;}
 .fila .etiqueta{font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; min-width:88px;}
 
-input[type="number"]{width:84px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--fg); font-family:var(--font-display); font-size:14px; min-width:0;}
+input[type="text"]{width:130px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--fg); font-family:var(--font-display); font-size:14px; min-width:0;}
 button.btn{appearance:none; border:1px solid var(--border); background:var(--bg); color:var(--fg); font-family:var(--font-body); font-weight:600; font-size:13px; padding:8px 13px; border-radius:8px; cursor:pointer; white-space:nowrap;}
 button.btn:hover{border-color:var(--accent);}
 button.btn.primario{background:var(--accent); color:var(--accent-fg); border-color:var(--accent);}
@@ -93,7 +93,7 @@ svg#arbol{width:100%; height:auto; max-width:900px;}
   <div class="card">
     <div class="fila">
       <span class="etiqueta">Operar</span>
-      <input type="number" id="valorInput" placeholder="valor" aria-label="Valor" />
+      <input type="text" id="valorInput" placeholder="valor o nombre" aria-label="Valor" />
       <button class="btn primario" id="btnInsertar">Insertar</button>
       <button class="btn" id="btnBuscar">Buscar</button>
       <button class="btn" id="btnEliminar">Eliminar</button>
@@ -300,9 +300,11 @@ svg#arbol{width:100%; height:auto; max-width:900px;}
       enorden(n.der, depth+1);
     }
     enorden(root, 0);
-    var slot = 62, top = 32, levelH = 78, radio = 22;
+    var maxRadio = 22;
+    nodos.forEach(function(n){ var r = radioPara(n.v); if(r > maxRadio) maxRadio = r; });
+    var slot = maxRadio*2 + 16, top = maxRadio + 10, levelH = maxRadio*2 + 30;
     var width = Math.max(300, contador*slot + 40);
-    var height = top + (maxDepth+1)*levelH + radio + 16;
+    var height = top + maxDepth*levelH + maxRadio + 16;
     var pos = {};
     nodos.forEach(function(n){ pos[n.v] = {x: 20 + (n._x+0.5)*slot, y: top + n._y*levelH}; });
     var aristas = [];
@@ -310,7 +312,24 @@ svg#arbol{width:100%; height:auto; max-width:900px;}
       if(n.izq) aristas.push([pos[n.v], pos[n.izq.v]]);
       if(n.der) aristas.push([pos[n.v], pos[n.der.v]]);
     });
-    return {nodos: nodos.map(function(n){ return {v:n.v, x:pos[n.v].x, y:pos[n.v].y}; }), aristas: aristas, width:width, height:height, radio:radio};
+    return {nodos: nodos.map(function(n){ return {v:n.v, x:pos[n.v].x, y:pos[n.v].y, r:radioPara(n.v)}; }), aristas: aristas, width:width, height:height};
+  }
+
+  function radioPara(v){
+    var len = String(v).length;
+    if(len <= 2) return 22;
+    if(len <= 4) return 26;
+    if(len <= 6) return 30;
+    if(len <= 9) return 36;
+    return 42;
+  }
+  function fuentePara(v){
+    var len = String(v).length;
+    if(len <= 2) return 14;
+    if(len <= 4) return 13;
+    if(len <= 6) return 12;
+    if(len <= 9) return 10;
+    return 9;
   }
 
   function dibujarArbol(tree, hl){
@@ -334,7 +353,7 @@ svg#arbol{width:100%; height:auto; max-width:900px;}
     L.nodos.forEach(function(n){
       var rol = hl[n.v];
       var circ = document.createElementNS(ns,'circle');
-      circ.setAttribute('cx', n.x); circ.setAttribute('cy', n.y); circ.setAttribute('r', L.radio);
+      circ.setAttribute('cx', n.x); circ.setAttribute('cy', n.y); circ.setAttribute('r', n.r);
       circ.setAttribute('fill', rol ? 'var(--'+rol+'-fill)' : 'var(--surface)');
       circ.setAttribute('stroke', rol ? 'var(--'+rol+')' : 'var(--border)');
       circ.setAttribute('stroke-width', '1.6');
@@ -343,7 +362,7 @@ svg#arbol{width:100%; height:auto; max-width:900px;}
       txt.setAttribute('x', n.x); txt.setAttribute('y', n.y+1);
       txt.setAttribute('text-anchor','middle'); txt.setAttribute('dominant-baseline','middle');
       txt.setAttribute('font-family',"var(--font-display)"); txt.setAttribute('font-weight','700');
-      txt.setAttribute('font-size','14'); txt.setAttribute('fill','var(--fg)');
+      txt.setAttribute('font-size', String(fuentePara(n.v))); txt.setAttribute('fill','var(--fg)');
       txt.textContent = n.v;
       svg.appendChild(txt);
     });
@@ -439,9 +458,11 @@ svg#arbol{width:100%; height:auto; max-width:900px;}
   }
 
   function leerValor(){
-    var v = parseInt($('valorInput').value, 10);
-    if(isNaN(v)){ $('valorInput').focus(); return null; }
-    return v;
+    var raw = $('valorInput').value.trim();
+    if(raw === ''){ $('valorInput').focus(); return null; }
+    // numero si son solo digitos (con signo opcional); si no, se compara como texto
+    // -- igual que Python compara strings alfabeticamente, "<" y ">" hacen lo mismo aqui.
+    return /^-?\d+$/.test(raw) ? parseInt(raw, 10) : raw;
   }
 
   $('btnInsertar').addEventListener('click', function(){
