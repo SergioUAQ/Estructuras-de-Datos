@@ -1166,7 +1166,7 @@ def post_orden(nodo, resultado):
     resultado.append(nodo.valor)
 ```
 
-### Práctica: agenda de contactos, eliminar y una probadita de clasificación
+### Práctica: agenda de contactos, eliminar.
 
 1. Construyan un `ArbolBinarioBusqueda` e inserten 10 nombres (strings — Python compara strings alfabéticamente, así que el BST funciona igual).
 2. Agreguen un método `altura(self)` que calcule la altura del árbol (número de niveles) usando recursión: altura de un nodo vacío es 0; altura de un nodo es `1 + max(altura(izq), altura(der))`.
