@@ -987,7 +987,7 @@ Organizar datos con una relación **jerárquica** (no lineal como listas/pilas/c
 
 *Árbol genealógico de ejemplo. Autores: Josef Sábl cz y Mysid, CC BY-SA 3.0 — Wikimedia Commons.*
 
-Un árbol genealógico es la analogía más directa: Lucas Grey (la raíz) tiene hijos, esos hijos tienen sus propios hijos, y así sucesivamente — nadie tiene más de un padre, y no hay ciclos. Un árbol binario de búsqueda es un árbol genealógico con una regla extra de orden.
+Un árbol genealógico es la analogía más directa: Lucas Grey (la raíz) tiene hijos, esos hijos tienen sus propios hijos, y así sucesivamente, nadie tiene más de un padre, y no hay ciclos. Un árbol binario de búsqueda es un árbol genealógico con una regla extra de orden.
 
 ```
         8
@@ -999,7 +999,7 @@ Un árbol genealógico es la analogía más directa: Lucas Grey (la raíz) tiene
      4   7  13
 ```
 
-Regla del BST: para cualquier nodo, todo lo de su **subárbol izquierdo es menor**, todo lo de su **subárbol derecho es mayor**.
+Regla del BST, para cualquier nodo, todo lo de su **subárbol izquierdo es menor**, todo lo de su **subárbol derecho es mayor**.
 
 ### Operaciones y su costo
 
@@ -1009,13 +1009,13 @@ Regla del BST: para cualquier nodo, todo lo de su **subárbol izquierdo es menor
 | Insertar | O(log n) | O(n) |
 | Eliminar | O(log n) | O(n) |
 
-El peor caso ocurre cuando el árbol degenera en una lista (por ejemplo, si insertan datos ya ordenados uno tras otro). Esto es exactamente por lo que existen los árboles auto-balanceados (AVL, rojo-negro) — mención para un curso más avanzado, no lo construimos aquí.
+El peor caso ocurre cuando el árbol degenera en una lista (por ejemplo, si insertan datos ya ordenados uno tras otro). Esto es exactamente por lo que existen los árboles auto-balanceados (AVL, rojo-negro).
 
 ### Dónde se usa en la vida real
 
 - **El sistema de archivos de su computadora:** carpetas dentro de carpetas dentro de carpetas es, literalmente, un árbol. `C:\Usuarios\ana\Documentos\tarea.docx` es una ruta desde la raíz hasta una hoja.
 - **El HTML de cualquier página web:** el navegador construye un árbol (el DOM) donde `<html>` es la raíz, `<body>` es su hijo, y cada etiqueta dentro es hija de la que la contiene. Cuando JavaScript "recorre el DOM", está recorriendo un árbol.
-- **Bases de datos reales:** MySQL, PostgreSQL y SQLite indexan sus tablas con variantes de árboles (B-tree, B+tree) precisamente para que un `WHERE id = 42` sea O(log n) en vez de tener que revisar cada fila.
+- **Bases de datos:** MySQL, PostgreSQL y SQLite indexan sus tablas con variantes de árboles (B-tree, B+tree) precisamente para que un `WHERE id = 42` sea O(log n) en vez de tener que revisar cada fila.
 
 Se elige un árbol cuando los datos tienen una **relación jerárquica natural** y se necesita buscar rápido dentro de esa jerarquía.
 
