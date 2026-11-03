@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="850" height="260" viewBox="0 0 850 260" xml:space="preserve">
+<title>Comparacion visual de BFS y DFS sobre el mismo grafo</title>
+<style type="text/css">
+	circle.nodo{ fill: #fff; stroke: #000; stroke-width: 1.6; }
+	circle.orden{ stroke-width: 1.4; stroke: #000; }
+	circle.orden.bfs{ fill: #F5A524; }
+	circle.orden.dfs{ fill: #3B82F6; }
+	line.base{ stroke: #aaa; stroke-width: 1.5; }
+	line.arbol.bfs{ stroke: #F5A524; stroke-width: 3.5; }
+	line.arbol.dfs{ stroke: #3B82F6; stroke-width: 3.5; }
+	text{ font-family: Helvetica, Arial, sans-serif; text-anchor: middle; }
+	.valor{ font-size: 15px; font-weight: bold; }
+	.numero{ font-size: 11px; font-weight: bold; fill: #fff; }
+	.titulo{ font-size: 15px; font-weight: bold; }
+	.orden-txt{ font-size: 12.5px; fill: #555; }
+</style>
+
+<!-- Panel izquierdo: BFS -->
+<text class="titulo" x="230" y="20">BFS desde A (cola)</text>
+
+<line class="base" x1="90" y1="60" x2="90" y2="180"/>
+<line class="arbol bfs" x1="90" y1="60" x2="230" y2="60"/>
+<line class="arbol bfs" x1="90" y1="60" x2="90" y2="180"/>
+<line class="arbol bfs" x1="230" y1="60" x2="230" y2="180"/>
+<line class="base" x1="90" y1="180" x2="230" y2="180"/>
+<line class="arbol bfs" x1="230" y1="180" x2="370" y2="180"/>
+
+<circle class="nodo" cx="90" cy="60" r="22"/>
+<text class="valor" x="90" y="65">A</text>
+<circle class="orden bfs" cx="106" cy="44" r="11"/>
+<text class="numero" x="106" y="48">1</text>
+
+<circle class="nodo" cx="230" cy="60" r="22"/>
+<text class="valor" x="230" y="65">B</text>
+<circle class="orden bfs" cx="246" cy="44" r="11"/>
+<text class="numero" x="246" y="48">2</text>
+
+<circle class="nodo" cx="90" cy="180" r="22"/>
+<text class="valor" x="90" y="185">C</text>
+<circle class="orden bfs" cx="106" cy="164" r="11"/>
+<text class="numero" x="106" y="168">3</text>
+
+<circle class="nodo" cx="230" cy="180" r="22"/>
+<text class="valor" x="230" y="185">D</text>
+<circle class="orden bfs" cx="246" cy="164" r="11"/>
+<text class="numero" x="246" y="168">4</text>
+
+<circle class="nodo" cx="370" cy="180" r="22"/>
+<text class="valor" x="370" y="185">E</text>
+<circle class="orden bfs" cx="386" cy="164" r="11"/>
+<text class="numero" x="386" y="168">5</text>
+
+<text class="orden-txt" x="230" y="230">Orden: A, B, C, D, E</text>
+<text class="orden-txt" x="230" y="248">(nivel por nivel; C-D no se usa, D ya estaba descubierto por B)</text>
+
+<!-- Panel derecho: DFS -->
+<text class="titulo" x="650" y="20">DFS desde A (pila)</text>
+
+<line class="base" x1="510" y1="60" x2="650" y2="60"/>
+<line class="arbol dfs" x1="510" y1="60" x2="510" y2="180"/>
+<line class="arbol dfs" x1="510" y1="60" x2="650" y2="60"/>
+<line class="arbol dfs" x1="650" y1="60" x2="650" y2="180"/>
+<line class="arbol dfs" x1="510" y1="180" x2="650" y2="180"/>
+<line class="arbol dfs" x1="650" y1="180" x2="790" y2="180"/>
+
+<circle class="nodo" cx="510" cy="60" r="22"/>
+<text class="valor" x="510" y="65">A</text>
+<circle class="orden dfs" cx="526" cy="44" r="11"/>
+<text class="numero" x="526" y="48">1</text>
+
+<circle class="nodo" cx="650" cy="60" r="22"/>
+<text class="valor" x="650" y="65">B</text>
+<circle class="orden dfs" cx="666" cy="44" r="11"/>
+<text class="numero" x="666" y="48">2</text>
+
+<circle class="nodo" cx="510" cy="180" r="22"/>
+<text class="valor" x="510" y="185">C</text>
+<circle class="orden dfs" cx="526" cy="164" r="11"/>
+<text class="numero" x="526" y="168">4</text>
+
+<circle class="nodo" cx="650" cy="180" r="22"/>
+<text class="valor" x="650" y="185">D</text>
+<circle class="orden dfs" cx="666" cy="164" r="11"/>
+<text class="numero" x="666" y="168">3</text>
+
+<circle class="nodo" cx="790" cy="180" r="22"/>
+<text class="valor" x="790" y="185">E</text>
+<circle class="orden dfs" cx="806" cy="164" r="11"/>
+<text class="numero" x="806" y="168">5</text>
+
+<text class="orden-txt" x="650" y="230">Orden: A, B, D, C, E</text>
+<text class="orden-txt" x="650" y="248">(se mete lo mas lejos posible; A-C no se usa, C ya se visita desde D)</text>
+
+</svg>

@@ -1183,6 +1183,8 @@ def post_orden(nodo, resultado):
 
 Modelar relaciones que **no son jerárquicas**: redes sociales, mapas de ciudades, dependencias entre tareas, páginas web enlazadas entre si. Un árbol es, de hecho, un caso particular de grafo (sin ciclos, con una raíz).
 
+> **Experimenten antes de leer el resto:** [Grafo Interactivo](https://sergiouaq.github.io/Estructuras-de-Datos/interactivos/grafo_interactivo.html) — agreguen nodos, conéctenlos, y corran BFS o DFS desde cualquiera para ver, paso a paso con la cola o la pila a la vista, cómo se descubre cada nodo. También pueden preguntarle si dos nodos están conectados.
+
 ### Cómo se ve por dentro
 
 Un grafo tiene **nodos (vértices)** y **conexiones (aristas)** entre ellos. Pueden tener dirección (A -> B distinto de B -> A) o no, y pueden tener peso (costo de la conexión) o no.
@@ -1277,6 +1279,35 @@ print(dfs(grafo, "A"))  # ['A', 'B', 'D', 'C', 'E']
 
 Noten que **la única diferencia estructural entre BFS y DFS es Cola vs. Pila** — es la razón por la que estas dos secciones se vieron antes que esta.
 
+Trace de `bfs(grafo, "A")`, mostrando la cola en cada paso:
+
+| Paso | Qué pasa | Cola | Orden de visita |
+|---|---|---|---|
+| inicio | `A` entra a la cola y se marca visitado | `[A]` | `[]` |
+| 1 | se saca `A`; sus vecinos `B` y `C` no estaban visitados → entran | `[B, C]` | `[A]` |
+| 2 | se saca `B`; su vecino `D` no estaba visitado → entra | `[C, D]` | `[A, B]` |
+| 3 | se saca `C`; sus vecinos `A` y `D` ya estaban visitados → nada nuevo | `[D]` | `[A, B, C]` |
+| 4 | se saca `D`; su vecino `E` no estaba visitado → entra | `[E]` | `[A, B, C, D]` |
+| 5 | se saca `E`; su vecino `D` ya estaba visitado → nada nuevo | `[]` | `[A, B, C, D, E]` |
+
+Trace de una versión de `dfs(grafo, "A")` con una **pila explícita** en vez de recursión (hace exactamente lo mismo que la versión recursiva, solo que aquí la pila se ve):
+
+| Paso | Qué pasa | Pila | Orden de visita |
+|---|---|---|---|
+| inicio | `A` entra a la pila | `[A]` | `[]` |
+| 1 | se saca `A` (tope); no visitado, se marca; se agregan sus vecinos `C`, `B` (en ese orden, para que `B` quede arriba) | `[C, B]` | `[A]` |
+| 2 | se saca `B` (tope); no visitado, se marca; se agrega su vecino `D` | `[C, D]` | `[A, B]` |
+| 3 | se saca `D` (tope); no visitado, se marca; se agregan `E` y `C` (su vecino `B` ya estaba visitado) | `[C, E, C]` | `[A, B, D]` |
+| 4 | se saca `C` (tope, el nuevo); no visitado, se marca; sus vecinos `A` y `D` ya estaban visitados → nada | `[C, E]` | `[A, B, D, C]` |
+| 5 | se saca `E` (tope); no visitado, se marca; su vecino `D` ya estaba visitado → nada | `[C]` | `[A, B, D, C, E]` |
+| 6 | se saca `C` (el original, duplicado) — **ya estaba visitado**, se descarta sin hacer nada | `[]` | `[A, B, D, C, E]` |
+
+El paso 6 es la parte rara de usar una pila explícita en vez de recursión: un mismo nodo puede quedar agregado dos veces (una vez por cada camino que lo alcanza antes de visitarlo), y por eso hace falta revisar "¿ya lo visité?" **al sacarlo**, no solo al agregarlo. La versión recursiva de arriba evita esto porque nunca agrega un nodo que ya esté en `visitados`.
+
+![Comparación visual de BFS y DFS sobre el mismo grafo](img/grafo_bfs_vs_dfs.svg)
+
+*El mismo grafo, recorrido desde A. BFS (izquierda) avanza nivel por nivel — el camino grueso es el que realmente usa para descubrir cada nodo. DFS (derecha) se mete lo más lejos posible antes de retroceder. En ambos casos sobra una arista (gris) que ya no hace falta recorrer porque el nodo del otro lado ya estaba descubierto.*
+
 ### Operaciones y su costo
 
 | Operación | Lista de adyacencia | Matriz de adyacencia |
@@ -1294,12 +1325,20 @@ Noten que **la única diferencia estructural entre BFS y DFS es Cola vs. Pila** 
 
 Se elige un grafo cuando las relaciones entre los datos **no son jerárquicas** — cualquier elemento puede conectarse con cualquier otro, sin una raíz única.
 
-### Práctica: red de amistades
+### Grafos con peso: una probadita de Dijkstra
+
+BFS encuentra el camino con **menos saltos** — pero eso solo es "el más corto de verdad" si todas las conexiones cuestan lo mismo. En un grafo con peso (la distancia real entre dos ciudades, el tiempo estimado de un tramo de carretera), un camino con menos saltos puede ser más largo que uno con más saltos pero tramos más cortos.
+
+El algoritmo de Dijkstra resuelve esto con un solo cambio sobre BFS: en vez de sacar nodos con una **Cola** (que siempre entrega lo que entró primero, sin importar el costo), usa un **Heap** — sección Colas de prioridad — que siempre entrega el camino más barato encontrado hasta el momento, sin importar cuándo se descubrió. Es la misma diferencia entre "primero en llegar" y "primero el más urgente" que ya vieron: aquí "más urgente" significa "más barato hasta ahora". No lo construimos en este curso, pero con BFS y con un Heap ya entendidos, la pieza que falta es nada más esa sustitución.
+
+### Práctica: red de amistades, trazar a mano, y un ciclo
 
 1. Modelen una red de 8 personas (nodos) con al menos 10 amistades (aristas) usando lista de adyacencia, asumiendo que la amistad es mutua (si A es amigo de B, agreguen la conexión en ambos sentidos).
-2. Usen `bfs` para encontrar el orden en que la información de un rumor llegaría a todos desde una persona inicial.
-3. Escriban una función `estan_conectados(grafo, origen, destino)` que devuelva `True`/`False` usando BFS o DFS (reutilicen el código de arriba, no necesitan reinventar el recorrido).
-4. Agreguen una persona que no tenga ninguna amistad con el resto y comprueben que `estan_conectados` devuelve `False` hacia ella.
+2. Antes de correr nada, tracen a mano (con una tabla como las de arriba, columnas Cola y Orden de visita) qué orden seguiría un BFS desde una persona que elijan. Después constrúyanlo en el [Grafo Interactivo](https://sergiouaq.github.io/Estructuras-de-Datos/interactivos/grafo_interactivo.html) (agregar nodo + conectar, los mismos pasos) y comparen contra su trace.
+3. Usen `bfs` para encontrar el orden en que la información de un rumor llegaría a todos desde una persona inicial.
+4. Escriban una función `estan_conectados(grafo, origen, destino)` que devuelva `True`/`False` usando BFS o DFS (reutilicen el código de arriba, no necesitan reinventar el recorrido).
+5. Agreguen una persona que no tenga ninguna amistad con el resto y comprueben que `estan_conectados` devuelve `False` hacia ella.
+6. En el Grafo Interactivo, construyan un grafo pequeño con un **ciclo** (por ejemplo, tres nodos conectados entre sí: A-B, B-C, C-A) y corran DFS. Busquen en la bitácora el paso donde un nodo "ya estaba visitado: se descarta" y expliquen en 2 líneas por qué ese paso es justo lo que evita que DFS dé vueltas para siempre en un grafo con ciclos.
 
 ---
 
@@ -1311,6 +1350,8 @@ Buscar, insertar y eliminar en **O(1) en promedio**, sin importar cuántos eleme
 
 Con esto ya pueden responder la práctica de "medir antes de razonar" (sección Complejidad) con precisión.
 
+> **Experimenten antes de leer el resto:** [Tabla Hash Interactiva](https://sergiouaq.github.io/Estructuras-de-Datos/interactivos/hash_interactivo.html) — inserten, busquen y eliminen llaves, y vean en la bitácora cómo se calcula el índice carácter por carácter, y cómo se resuelve una colisión cuando dos llaves caen en la misma cubeta.
+
 ### Cómo se ve por dentro
 
 Una **función hash** convierte una llave (string, número, lo que sea) en un índice de un arreglo interno. Guardar `"Ana": 20` es, en el fondo: calcular `hash("Ana") % tamano_del_arreglo` y poner el par ahí.
@@ -1321,20 +1362,36 @@ Una **función hash** convierte una llave (string, número, lo que sea) en un í
 
 Es exactamente como una guía telefónica hecha al revés: en vez de ordenar los nombres alfabéticamente y buscar hoja por hoja (eso sería O(log n) si está bien ordenada, O(n) si no), la función hash calcula de una sola vez en qué "página" debería estar cada nombre.
 
+**Un aviso antes de seguir:** si prueban `hash("Ana") % 8` en su propio Python, anoten el resultado, cierren la terminal, y vuelvan a abrirla — casi seguro les da un número **distinto**. Por seguridad, Python aleatoriza el hash de los strings en cada ejecución (`PYTHONHASHSEED`), así que `hash()` sobre un string no es reproducible entre corridas ni se puede calcular a mano. Para poder trazar los ejemplos de esta sección con lápiz y papel, vamos a usar una función hash propia, mucho más simple e intencionalmente ingenua:
+
+```python
+def hash_simple(llave, capacidad):
+    suma = 0
+    for caracter in llave:
+        suma += ord(caracter)
+    return suma % capacidad
 ```
-hash("Ana")  % 8  ->  posicion 3
-hash("Luis") % 8  ->  posicion 6
+
+`ord(caracter)` devuelve el código numérico de un carácter (`ord('A')` es `65`). Esta función sí da siempre el mismo resultado — es justo la que usa el [Tabla Hash Interactiva](https://sergiouaq.github.io/Estructuras-de-Datos/interactivos/hash_interactivo.html) de arriba, para que lo que ven ahí coincida con lo que calculen a mano.
+
+```
+hash_simple("Ana", 8)   ->  (65+110+97) % 8    = 272 % 8 = 0
+hash_simple("Luis", 8)  ->  (76+117+105+115) % 8 = 413 % 8 = 5
 
 arreglo interno:
-[None, None, None, ("Ana", 20), None, None, ("Luis", 21), None]
+[("Ana", 20), None, None, None, None, ("Luis", 21), None, None]
 ```
 
 ### El problema de las colisiones
 
-Dos llaves distintas pueden caer en la misma posición (`hash("Ana") % 8 == hash("Eva") % 8`, por ejemplo). La solución más común es **encadenamiento**: cada posición del arreglo guarda una lista de pares, no un solo par.
+Dos llaves distintas pueden caer en la misma posición: `hash_simple("Ana", 8)` y `hash_simple("Leo", 8)` dan **0** los dos (`272 % 8 = 0`, y `76+101+111 = 288`, `288 % 8 = 0` también). La solución más común es **encadenamiento**: cada posición del arreglo guarda una lista de pares, no un solo par.
+
+![Colisión en una tabla hash resuelta con encadenamiento](img/hash_colision.svg)
+
+*Dos llaves distintas, mismo índice: la cubeta 0 guarda ambos pares en una lista en vez de uno solo.*
 
 ```
-posicion 3: [("Ana", 20), ("Eva", 19)]
+posicion 0: [("Ana", 20), ("Leo", 30)]
 ```
 
 Si la función hash reparte bien las llaves y el arreglo no está demasiado lleno, cada posición tiene en promedio 0 o 1 elementos — por eso el costo promedio sigue siendo `O(1)`. Si la función hash es mala (todo cae en la misma posición), degenera a `O(n)`: una lista enlazada disfrazada.
@@ -1365,7 +1422,13 @@ class TablaHash:
         self.cubetas = [[] for _ in range(capacidad)]
 
     def _indice(self, llave):
-        return hash(llave) % self.capacidad
+        # hash_simple de la seccion de arriba: reproducible, se puede
+        # calcular a mano -- a diferencia de hash(), que Python aleatoriza
+        # para strings en cada ejecucion.
+        suma = 0
+        for caracter in llave:
+            suma += ord(caracter)
+        return suma % self.capacidad
 
     def insertar(self, llave, valor):
         cubeta = self.cubetas[self._indice(llave)]
@@ -1399,14 +1462,16 @@ tabla.eliminar("Ana")
 tabla.buscar("Ana")           # KeyError
 ```
 
-Esto es, a grandes rasgos, lo que hace `dict` por dentro (con muchas optimizaciones adicionales que Python ya trae resueltas).
+Esto es, a grandes rasgos, lo que hace `dict` por dentro — con el verdadero `hash()` (optimizado, y aleatorizado para strings por seguridad) y muchas otras optimizaciones que Python ya trae resueltas, en vez de `hash_simple`.
 
-### Práctica: contador de votos
+### Práctica: contador de votos y colisiones a mano
 
-1. Usen `TablaHash` (la de arriba, no `dict`) para contar votos de una elección: cada voto es un string con el nombre del candidato.
-2. Simulen 20 votos repartidos entre 4 candidatos (pueden generarlos con `random.choice`).
-3. Cuando un candidato ya tiene votos registrados, su conteo debe **incrementarse**, no reemplazarse — van a necesitar leer el valor actual con `buscar` antes de volver a `insertar`, o modificar el método `insertar` para que sepa sumar.
-4. Al final, recorran las `cubetas` de la tabla e impriman cuántas de las 8 posiciones quedaron vacías y cuántas tienen más de un candidato (colisión). Conecten el resultado con la sección "El problema de las colisiones".
+1. Antes de programar nada: con lápiz y papel, calculen `hash_simple(nombre, 8)` para 4 nombres de candidatos que ustedes elijan (sumen los `ord()` de cada letra, saquen el módulo 8). Anoten en qué cubeta cae cada uno, y si alguno colisiona con otro. Verifiquen su cálculo insertándolos en el [Tabla Hash Interactiva](https://sergiouaq.github.io/Estructuras-de-Datos/interactivos/hash_interactivo.html) — la bitácora les va a mostrar la misma suma que ustedes calcularon.
+2. Usen `TablaHash` (la de arriba, no `dict`) para contar votos de una elección: cada voto es un string con el nombre del candidato.
+3. Simulen 20 votos repartidos entre 4 candidatos (pueden generarlos con `random.choice`).
+4. Cuando un candidato ya tiene votos registrados, su conteo debe **incrementarse**, no reemplazarse — van a necesitar leer el valor actual con `buscar` antes de volver a `insertar`, o modificar el método `insertar` para que sepa sumar.
+5. Al final, recorran las `cubetas` de la tabla e impriman cuántas de las 8 posiciones quedaron vacías y cuántas tienen más de un candidato (colisión). Comparen contra lo que predijeron en el paso 1.
+6. Respondan por escrito (2-3 líneas): si en vez de 4 candidatos hubiera 50, y la tabla siguiera teniendo solo 8 cubetas, ¿qué le pasaría al factor de carga (elementos / capacidad) y a la complejidad real de `buscar`? Verifiquen cambiando la capacidad en el Tabla Hash Interactiva y viendo qué tan cargadas quedan las cubetas.
 
 ---
 
@@ -1510,21 +1575,3 @@ print(merge_sort([5, 2, 9, 1, 5, 6]))  # [1, 2, 5, 5, 6, 9]
 2. Ordenen una copia con `insertion_sort` y otra copia con `merge_sort`, cronometrando cada una con `time.perf_counter()` (mismo patrón de la sección Complejidad).
 3. Comparen los tiempos y expliquen la diferencia en términos de `O(n^2)` vs `O(n log n)`.
 4. Sobre la lista ya ordenada, usen `busqueda_binaria` para buscar 3 valores que sepan que existen y 1 que sepan que no existe. Confirmen que los índices devueltos son correctos revisando `valores[índice]`.
-
----
-
-## Cómo seguir
-
-El orden de este documento no es casualidad: cada estructura resuelve una limitación concreta de la anterior.
-
-```
-Arreglo (acceso O(1), insertar al inicio O(n))
-   -> Lista enlazada (insertar al inicio O(1), pierde acceso directo)
-        -> Pila / Cola (casos de uso concretos de listas enlazadas/arreglos)
-             -> Heap (cola, pero por prioridad en vez de orden de llegada)
-                  -> Árbol (jerarquía, búsqueda O(log n))
-                       -> Grafo (relaciones generales, no solo jerárquicas)
-                            -> Tabla hash (búsqueda O(1), el techo práctico)
-```
-
-Con esto ya tienen las piezas para leer implementaciones reales (por ejemplo, por qué `dict` de Python es una tabla hash, o por qué `sorted()` usa una variante de merge sort llamada Timsort) y para elegir con criterio, en un problema nuevo, cuál estructura conviene según qué operación van a hacer **más seguido**.
