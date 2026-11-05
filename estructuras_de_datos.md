@@ -1477,7 +1477,7 @@ Esto es, a grandes rasgos, lo que hace `dict` por dentro — con el verdadero `h
 6. Respondan por escrito (2-3 líneas): si en vez de 4 candidatos hubiera 50, y la tabla siguiera teniendo solo 8 cubetas, ¿qué le pasaría al factor de carga (elementos / capacidad) y a la complejidad real de `buscar`? Verifiquen cambiando la capacidad en el Tabla Hash Interactiva y viendo qué tan cargadas quedan las cubetas.
 -->
 
----
+<!--
 
 ## Ordenamiento y búsqueda
 
@@ -1573,7 +1573,6 @@ def _combinar(izquierda, derecha):
 print(merge_sort([5, 2, 9, 1, 5, 6]))  # [1, 2, 5, 5, 6, 9]
 ```
 
-<!--
 ### Práctica: comparar en la práctica
 
 1. Generen una lista de 5,000 números aleatorios (`random.sample` o `random.randint` en un ciclo).
