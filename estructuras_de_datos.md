@@ -1331,6 +1331,7 @@ BFS encuentra el camino con **menos saltos** — pero eso solo es "el más corto
 
 El algoritmo de Dijkstra resuelve esto con un solo cambio sobre BFS: en vez de sacar nodos con una **Cola** (que siempre entrega lo que entró primero, sin importar el costo), usa un **Heap** — sección Colas de prioridad — que siempre entrega el camino más barato encontrado hasta el momento, sin importar cuándo se descubrió. Es la misma diferencia entre "primero en llegar" y "primero el más urgente" que ya vieron: aquí "más urgente" significa "más barato hasta ahora". No lo construimos en este curso, pero con BFS y con un Heap ya entendidos, la pieza que falta es nada más esa sustitución.
 
+<!--
 ### Práctica: red de amistades, trazar a mano, y un ciclo
 
 1. Modelen una red de 8 personas (nodos) con al menos 10 amistades (aristas) usando lista de adyacencia, asumiendo que la amistad es mutua (si A es amigo de B, agreguen la conexión en ambos sentidos).
@@ -1339,6 +1340,7 @@ El algoritmo de Dijkstra resuelve esto con un solo cambio sobre BFS: en vez de s
 4. Escriban una función `estan_conectados(grafo, origen, destino)` que devuelva `True`/`False` usando BFS o DFS (reutilicen el código de arriba, no necesitan reinventar el recorrido).
 5. Agreguen una persona que no tenga ninguna amistad con el resto y comprueben que `estan_conectados` devuelve `False` hacia ella.
 6. En el Grafo Interactivo, construyan un grafo pequeño con un **ciclo** (por ejemplo, tres nodos conectados entre sí: A-B, B-C, C-A) y corran DFS. Busquen en la bitácora el paso donde un nodo "ya estaba visitado: se descarta" y expliquen en 2 líneas por qué ese paso es justo lo que evita que DFS dé vueltas para siempre en un grafo con ciclos.
+-->
 
 ---
 
@@ -1464,6 +1466,7 @@ tabla.buscar("Ana")           # KeyError
 
 Esto es, a grandes rasgos, lo que hace `dict` por dentro — con el verdadero `hash()` (optimizado, y aleatorizado para strings por seguridad) y muchas otras optimizaciones que Python ya trae resueltas, en vez de `hash_simple`.
 
+<!--
 ### Práctica: contador de votos y colisiones a mano
 
 1. Antes de programar nada: con lápiz y papel, calculen `hash_simple(nombre, 8)` para 4 nombres de candidatos que ustedes elijan (sumen los `ord()` de cada letra, saquen el módulo 8). Anoten en qué cubeta cae cada uno, y si alguno colisiona con otro. Verifiquen su cálculo insertándolos en el [Tabla Hash Interactiva](https://sergiouaq.github.io/Estructuras-de-Datos/interactivos/hash_interactivo.html) — la bitácora les va a mostrar la misma suma que ustedes calcularon.
@@ -1472,6 +1475,7 @@ Esto es, a grandes rasgos, lo que hace `dict` por dentro — con el verdadero `h
 4. Cuando un candidato ya tiene votos registrados, su conteo debe **incrementarse**, no reemplazarse — van a necesitar leer el valor actual con `buscar` antes de volver a `insertar`, o modificar el método `insertar` para que sepa sumar.
 5. Al final, recorran las `cubetas` de la tabla e impriman cuántas de las 8 posiciones quedaron vacías y cuántas tienen más de un candidato (colisión). Comparen contra lo que predijeron en el paso 1.
 6. Respondan por escrito (2-3 líneas): si en vez de 4 candidatos hubiera 50, y la tabla siguiera teniendo solo 8 cubetas, ¿qué le pasaría al factor de carga (elementos / capacidad) y a la complejidad real de `buscar`? Verifiquen cambiando la capacidad en el Tabla Hash Interactiva y viendo qué tan cargadas quedan las cubetas.
+-->
 
 ---
 
@@ -1569,9 +1573,11 @@ def _combinar(izquierda, derecha):
 print(merge_sort([5, 2, 9, 1, 5, 6]))  # [1, 2, 5, 5, 6, 9]
 ```
 
+<!--
 ### Práctica: comparar en la práctica
 
 1. Generen una lista de 5,000 números aleatorios (`random.sample` o `random.randint` en un ciclo).
 2. Ordenen una copia con `insertion_sort` y otra copia con `merge_sort`, cronometrando cada una con `time.perf_counter()` (mismo patrón de la sección Complejidad).
 3. Comparen los tiempos y expliquen la diferencia en términos de `O(n^2)` vs `O(n log n)`.
 4. Sobre la lista ya ordenada, usen `busqueda_binaria` para buscar 3 valores que sepan que existen y 1 que sepan que no existe. Confirmen que los índices devueltos son correctos revisando `valores[índice]`.
+-->
